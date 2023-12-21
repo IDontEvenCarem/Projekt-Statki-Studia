@@ -1,7 +1,7 @@
 <template>
     <div class="the-header">
         <div class="title">
-            Gra w Statki
+            🚢💣
         </div>
         <div class="breadcrumbs">
             
