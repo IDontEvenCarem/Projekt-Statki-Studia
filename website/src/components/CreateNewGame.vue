@@ -1,14 +1,36 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const name = ref('');
+const isPublic = ref(false);
+
+const $emit = defineEmits<{
+    createGame: [name: string, is_public: boolean]
+}>()
+
+function onClick () {
+    if (name.value.length === 0) {
+        return;
+    }
+    $emit('createGame', name.value, isPublic.value);
+}
+
+</script>
+
 <template>
     <div class="wrapper">
         <h2>Stwórz nową grę</h2>
         <input 
             type="text" 
             placeholder="Nazwa gry" 
-            maxlength="32"    
+            maxlength="32"
+            v-model="name"    
         />
-        <button>Stwórz nową grę</button>
+        <button
+            @click="onClick"
+        >Stwórz nową grę</button>
         <div>
-            <input type="checkbox" id="public" />
+            <input type="checkbox" id="public" v-model="isPublic" />
             <label for="public">Publiczna</label>
         </div>
     </div>

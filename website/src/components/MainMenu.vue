@@ -3,14 +3,23 @@ import JoinExistingGame from './JoinExistingGame.vue';
 import CreateNewGame from './CreateNewGame.vue';
 import PublicGamesList from './PublicGamesList.vue';
 
+defineEmits<{
+    joinExistingGame: [gameCode: string],
+    createNewGame: [name: string, is_public: boolean],
+}>()
+
 </script>
 
 <template>
     <div class="main-menu__root">
         <div class="main-menu__title">Statki</div>
-        <JoinExistingGame></JoinExistingGame>
+        <JoinExistingGame
+            @joinGame="ev => $emit('joinExistingGame', ev)"
+        />
         <h2 class="main-menu__separator">lub</h2>
-        <CreateNewGame></CreateNewGame>
+        <CreateNewGame
+            @createGame="(name, is_public) => $emit('createNewGame', name, is_public)"
+        />
         <PublicGamesList class="main-menu__public-games-list"></PublicGamesList>
     </div>
 </template>

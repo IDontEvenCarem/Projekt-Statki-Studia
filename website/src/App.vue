@@ -1,32 +1,42 @@
 <script setup lang="ts">
+import { CommunicationApi } from './comms';
 import GamePlayboard from './components/GamePlayboard.vue';
 import MainMenu from './components/MainMenu.vue';
-import { ref } from 'vue';
+import { onUnmounted, ref, watch } from 'vue';
 
 const whichFieldActive = ref<'player' | 'enemy'>('player');
 
 const gameIdentifier = ref<string | null>(null);
 
+const comms = new CommunicationApi("ws://localhost:5001");
+onUnmounted(() => { comms.close(); });
+
+comms.addEventListener('message', (event) => {
+  console.log(event);
+});
+
+watch(gameIdentifier, (newValue) => {
+  if (newValue) {
+    comms.send(`JOIN ${newValue}`);
+  }
+});
+
+
+
 </script>
 
 <template>
   <div class="main-layout">
-    <MainMenu v-if="!gameIdentifier" @game-started="gameIdentifier = $event" />
-    <div 
-      class="content"
-      v-else
-      @click="whichFieldActive = whichFieldActive === 'player' ? 'enemy' : 'player'"
-    >
-      <GamePlayboard 
-        id="enemy-field" 
-        :class="{ active: whichFieldActive === 'enemy', 'field': true }"
-        title="Plansza wroga"
-      />
-      <GamePlayboard 
-        id="player-field" 
-        :class="{ active: whichFieldActive === 'player', 'field': true }" 
-        title="Twoja plansza"
-      />
+    <MainMenu 
+      v-if="!gameIdentifier" 
+      @joinExistingGame="gameIdentifier = $event"
+      @createNewGame="gameIdentifier = $event"
+    />
+    <div class="content" v-else @click="whichFieldActive = whichFieldActive === 'player' ? 'enemy' : 'player'">
+      <GamePlayboard id="enemy-field" :class="{ active: whichFieldActive === 'enemy', 'field': true }"
+        title="Plansza wroga" />
+      <GamePlayboard id="player-field" :class="{ active: whichFieldActive === 'player', 'field': true }"
+        title="Twoja plansza" />
     </div>
   </div>
 </template>
@@ -40,6 +50,7 @@ const gameIdentifier = ref<string | null>(null);
   min-height: 100vh;
   gap: 1em;
 }
+
 .content {
   position: relative;
   display: grid;
@@ -74,13 +85,13 @@ const gameIdentifier = ref<string | null>(null);
     transition: transform 0.4s ease;
     transform: translateX(-20%);
   }
+
   .field:not(.active) {
     transform: translateX(80%) scale(0.5) translateX(-40%);
   }
+
   .active {
     z-index: 1;
   }
 }
-
-
 </style>
