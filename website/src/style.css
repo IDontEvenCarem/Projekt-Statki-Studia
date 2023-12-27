@@ -45,3 +45,8 @@ button {
 button:hover {
   background-color: color-mix(in srgb, var(--main-color) 40%, #000);
 }
+button:disabled {
+  background-color: color-mix(in srgb, var(--main-color) 50%, #000);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+}

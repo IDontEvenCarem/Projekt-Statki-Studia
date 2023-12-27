@@ -1,12 +1,27 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+
+defineEmits<{
+    joinGame: [gameCode: string]
+}>()
+
+const value = ref('');
 
 </script>
 
 <template>
     <div class="wrapper">
         <h2>Dołącz do gry</h2>
-        <input type="text" placeholder="Wprowadź kod gry" />
-        <button>Dołącz do gry</button>
+        <input 
+            type="text" 
+            placeholder="Wprowadź kod gry" 
+            maxlength="8"
+            v-model="value" 
+        />
+        <button 
+            @click="$emit('joinGame', value)"
+            :disabled="value.length !== 8"
+        >Dołącz do gry</button>
     </div>
 </template>
 

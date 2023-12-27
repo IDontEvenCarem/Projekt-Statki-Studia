@@ -1,7 +1,11 @@
 <template>
     <div class="wrapper">
         <h2>Stwórz nową grę</h2>
-        <input type="text" placeholder="Nazwa gry" />
+        <input 
+            type="text" 
+            placeholder="Nazwa gry" 
+            maxlength="32"    
+        />
         <button>Stwórz nową grę</button>
         <div>
             <input type="checkbox" id="public" />

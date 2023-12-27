@@ -24,7 +24,7 @@ import PublicGamesList from './PublicGamesList.vue';
     text-align: center;
     background-color: var(--main-color);
     border-radius: var(--border-radius);
-    padding: 50px;
+    padding: 20px 50px 50px;
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
@@ -32,10 +32,12 @@ import PublicGamesList from './PublicGamesList.vue';
 }
 
 .main-menu__title {
-    font-size: 2em;
+    font-size: 3em;
     font-weight: bold;
     color: var(--main-color-light);
     grid-area: 1 / 1 / 2 / 5;
+    padding: 0;
+    margin: 0;
 }
 
 .main-menu__separator {
