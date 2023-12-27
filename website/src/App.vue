@@ -1,18 +1,20 @@
 <script setup lang="ts">
-// import BaseButton from './components/BaseButton.vue';
-import TheHeader from './components/TheHeader.vue';
 import GamePlayboard from './components/GamePlayboard.vue';
+import MainMenu from './components/MainMenu.vue';
 import { ref } from 'vue';
 
 const whichFieldActive = ref<'player' | 'enemy'>('player');
+
+const gameIdentifier = ref<string | null>(null);
 
 </script>
 
 <template>
   <div class="main-layout">
-    <TheHeader></TheHeader>
+    <MainMenu v-if="!gameIdentifier" @game-started="gameIdentifier = $event" />
     <div 
       class="content"
+      v-else
       @click="whichFieldActive = whichFieldActive === 'player' ? 'enemy' : 'player'"
     >
       <GamePlayboard 

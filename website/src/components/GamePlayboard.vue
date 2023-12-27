@@ -1,3 +1,9 @@
+<script setup lang="ts">
+defineProps<{
+    title: string;
+}>()
+</script>
+
 <template>
     <div class="game-playboard">
         <div class="board-header">
@@ -10,12 +16,6 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-defineProps<{
-    title: string;
-}>()
-</script>
 
 <style scoped>
 .game-playboard {
@@ -48,5 +48,10 @@ defineProps<{
     background-color: var(--main-color);
     border-radius: var(--border-radius);
     aspect-ratio: 1;
+    transition: background-color 0.2s ease;
+}
+
+.cell:hover {
+    background-color: color-mix(in srgb, var(--main-color), #fff);
 }
 </style>

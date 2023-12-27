@@ -29,3 +29,19 @@ body, html {
   margin: 0;
   padding: 0;
 }
+
+input {
+  padding: 5px;
+}
+
+button {
+  padding: 5px;
+  border-radius: 5px;
+  border: none;
+  background-color: color-mix(in srgb, var(--main-color) 50%, #000);
+  color: white;
+  cursor: pointer;
+}
+button:hover {
+  background-color: color-mix(in srgb, var(--main-color) 40%, #000);
+}
