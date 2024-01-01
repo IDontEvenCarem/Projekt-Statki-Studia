@@ -1,13 +1,19 @@
 export class CommunicationApi extends EventTarget {
     #ws: WebSocket;
     #awaiters = new Map<string, (data: any) => void>();
+    #own_id: string | null = null;
 
     constructor(url: string) {
         super();
         this.#ws = new WebSocket(url);
         this.#ws.addEventListener('message', (event) => {
-            this.dispatchEvent(new CustomEvent('message', { detail: event.data }));
             const data = JSON.parse(event.data);
+            
+            if (data.type === 'INITIAL_ID') {
+                this.#own_id = data.id;
+            }
+
+            this.dispatchEvent(new CustomEvent('message', { detail: event.data }));
             const awaiter = this.#awaiters.get(data.id);
             if (awaiter) {
                 awaiter(data);
@@ -16,13 +22,29 @@ export class CommunicationApi extends EventTarget {
         });
     }
     
-    send(message: string) {
-        this.#ws.send(message);
+    send(message: string | Object) {
+        if (typeof message !== 'string') {
+            message = JSON.stringify(message);
+        }
+        this.#ws.send(message as string);
     }
 
     close() {
         this.#ws.close();
-    }    
+    }
+
+    async awaitReady() {
+        return new Promise<void>((resolve) => {
+            const inner = () => {
+                if (this.#own_id) {
+                    resolve();
+                } else {
+                    setTimeout(inner, 100);
+                }
+            }
+            inner();
+        });
+    }
 
     async joinGame(name: string) {
         return await this.sendAndWait({ type: 'join', name });

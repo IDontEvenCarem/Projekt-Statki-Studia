@@ -2,24 +2,34 @@
 import { CommunicationApi } from './comms';
 import GamePlayboard from './components/GamePlayboard.vue';
 import MainMenu from './components/MainMenu.vue';
-import { onUnmounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 const whichFieldActive = ref<'player' | 'enemy'>('player');
 
 const gameIdentifier = ref<string | null>(null);
 
-const comms = new CommunicationApi("ws://localhost:5001");
-onUnmounted(() => { comms.close(); });
+const comms = ref<CommunicationApi | null>(null);
 
-comms.addEventListener('message', (event) => {
-  console.log(event);
+
+onMounted(() => { 
+  comms.value = new CommunicationApi("ws://localhost:5001"); 
+
+  comms.value?.addEventListener('message', (event) => {
+    console.log(event);
+  });
+
+  return () => { comms.value?.close(); }
 });
 
 watch(gameIdentifier, (newValue) => {
   if (newValue) {
-    comms.send(`JOIN ${newValue}`);
+    comms.value?.send({
+      type: 'join-game',
+      game_id: newValue,
+    })
   }
 });
+
 
 
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import JoinExistingGame from './JoinExistingGame.vue';
 import CreateNewGame from './CreateNewGame.vue';
-import PublicGamesList from './PublicGamesList.vue';
 
 defineEmits<{
     joinExistingGame: [gameCode: string],
@@ -20,7 +19,6 @@ defineEmits<{
         <CreateNewGame
             @createGame="(name, is_public) => $emit('createNewGame', name, is_public)"
         />
-        <PublicGamesList class="main-menu__public-games-list"></PublicGamesList>
     </div>
 </template>
 

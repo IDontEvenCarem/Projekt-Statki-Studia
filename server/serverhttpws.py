@@ -4,7 +4,7 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from colorama import Fore, Style
 
-SERVER = "85.89.170.62"
+SERVER = "0.0.0.0"
 PORT_HTTP = 5000
 PORT_WS = 5001
 
@@ -61,7 +61,7 @@ async def ws_handler(websocket, path):
     print(f"{Fore.LIGHTYELLOW_EX}[WEBSOCKET SERVER] client({client_id}) connected !! {Style.RESET_ALL}")  
 
     # Wysłanie klientowi jego unikalnego id
-    response_data = {"my_id": f"{client_id}"}
+    response_data = {"type": "INITIAL_ID", "my_id": f"{client_id}"}
     response_json = json.dumps(response_data)
     await clients[client_id].send(response_json)
 
@@ -84,7 +84,7 @@ async def ws_handler(websocket, path):
                 response_status = "400"
             
             # Przesłanie klientowi informacji czy wysłał dobre współrzędne
-            response_data = {"response_status": f"{response_status}"}
+            response_data = {"type": "RESPONSE", "response_status": f"{response_status}"}
             response_json = json.dumps(response_data)
             await websocket.send(response_json)
 
@@ -111,7 +111,7 @@ async def send_to_client(enemy_player_id, coordinates, sender):
         client_socket = clients[enemy_player_id]
 
         # Serializuj dane do formatu JSON
-        response_data = {"coordinates": f"{coordinates}","my_id": sender, "enemy_player_id": f"{enemy_player_id}"}
+        response_data = {"type": "ENEMY_SHOT", "coordinates": f"{coordinates}", "my_id": sender, "enemy_player_id": f"{enemy_player_id}"}
         response_json = json.dumps(response_data)
 
         # Wyślij odpowiedź do klienta
