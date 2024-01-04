@@ -3,43 +3,64 @@ import websockets
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from colorama import Fore, Style
+import game_logic
+import random
+import string
+from typing import Dict, Any
 
 SERVER = "0.0.0.0"
 PORT_HTTP = 5000
 PORT_WS = 5001
 
-connected = set() # copy of all websocets curently connected
+connected = dict() # copy of all websocets curently connected (websocket.remote_address -> websocket)
 http_server = None
 ws_server = None
 clients = {}
+
+def inform_client(client_id, data):
+    print(f"{Fore.LIGHTMAGENTA_EX}[SERVER WEBSOCKET] Informing client({client_id}): {data} {Style.RESET_ALL}")
+    if client_id in clients:
+        client_socket = clients[client_id]
+        response_json = json.dumps(data)
+        asyncio.run_coroutine_threadsafe(client_socket.send(response_json), asyncio.get_event_loop())
+
 # ==============================================================
 
-# Do sprawdzania czy dobrze działa sprawdzanie statusu wiadomości i odsyłanie ich
-def czy_poprawne_wspolrzedne(wspolrzedne):
+class GameManager:
+    def __init__(self, send_to_client_hook):
+        # mapa player_id -> game_id
+        self.player_game_map : Dict[str, Any] = {}
+        # mapa game_id -> player_id[]
+        self.game_player_map : Dict[str, Any] = {}
+        # mapa game_id -> Game
+        self.game_map : Dict[str, game_logic.WarshipsGame] = {}
+        self.send_to_client_hook = send_to_client_hook
 
-    # Sprawdź, czy współrzędne mają poprawny format
-    if len(wspolrzedne) < 2:
-        print("Dlugosc wspolrzednej: " + str(len(wspolrzedne)))
-        return False
+    def create_game(self, player_id):
+        game_id = self.generate_game_id()
+        game = game_logic.WarshipsGame()
+        self.game_map[game_id] = game
+        self.player_game_map[player_id] = game_id
+        self.game_player_map[game_id] = [player_id]
+        return game_id
 
-    litera, cyfra = wspolrzedne[0].upper(), wspolrzedne[1]
- 
-    # Sprawdź, czy litera jest w zakresie kolumn
-    if litera < 'A' or litera > 'J':
-        print(" Czy litera zawarta w przedziale (Nie): " + litera)
-        return False
+    def join_game(self, player_id, game_id):
+        game = self.game_map[game_id]
+        game.add_player(player_id)
+        self.player_game_map[player_id] = game_id
+        other_player_id = self.game_player_map[game_id][0]
+        self.game_player_map[game_id].append(player_id)
+        return other_player_id
 
-    # Sprawdź, czy cyfra mieści się w zakresie wierszy
-    try:
-        cyfra = int(cyfra)
-        if not (1 <= cyfra <= 10):
-            print(" Czy cyfra zawarta w przedziale (Nie): " + str(cyfra))
-            return False
-    except ValueError:
-        return False
-    # print("Przeanalizowane dane: " + litera + str(cyfra))
-    return True
+    def generate_game_id(self):
+        while True:
+            game_id = "".join(random.sample(string.ascii_letters + string.digits, 6))
+            if game_id not in self.game_map:
+                return game_id
+    
+game_manager = GameManager(send_to_client_hook=inform_client)
 
+# ==============================================================
 
 class ServerHttp(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -50,12 +71,12 @@ class ServerHttp(BaseHTTPRequestHandler):
         self.wfile.write(bytes("<html><body><h1>Hello</h1></body></html>", "utf-8"))
 
 async def ws_handler(websocket, path):
-    connected.add(websocket)
+    connected[websocket.remote_address] = websocket
 
     # Generuj unikalny identyfikator klienta
-    client_id = id(websocket)
+    client_id = websocket.remote_address
     # Przypisz klienta do słownika
-    clients[client_id] = websocket 
+    clients[client_id] = websocket
 
     # Client connected
     print(f"{Fore.LIGHTYELLOW_EX}[WEBSOCKET SERVER] client({client_id}) connected !! {Style.RESET_ALL}")  
@@ -68,34 +89,44 @@ async def ws_handler(websocket, path):
     # Odczytywanie wiadomości asynchronicznie. Ciągle oczekuje na nowe wiadomości od klienta
     try:
         async for message in websocket:           
-            
             # Odczytywanie informacji z pliku JSON
             data = json.loads(message)
-            coordinates = data.get('coordinates')
-            enemy_player_id = int(data.get('enemy_player_id'))
 
-            # Wyświetlenie zawartości pliku JSON
             print(f"{Fore.LIGHTMAGENTA_EX}[SERVER WEBSOCKET] Recieved message from client({client_id}): {data} {Style.RESET_ALL}")    # recieved message
 
-            # Sprawdzenie czy wysłane współrzędne są poprawnego formatu i zakresu
-            if czy_poprawne_wspolrzedne(coordinates):
-                response_status = "200"
+            type = data.get('type')
+            request_id = data.get('request_id')
+
+            response_data = {}
+            response_status = "ERROR"
+
+            if type == "create_game":
+                game_id = game_manager.create_game(player_id=client_id)
+                response_data['game_id'] = game_id
+                response_status = "OK"
+            elif type == "join_game":
+                other_player_id = game_manager.join_game(player_id=client_id, game_id=data['game_id'])
+                response_status = "OK"
+                await send_to_client(other_player_id, {"type": "enemy_joined", "enemy_player_id": client_id})
             else:
-                response_status = "400"
-            
-            # Przesłanie klientowi informacji czy wysłał dobre współrzędne
-            response_data = {"type": "RESPONSE", "response_status": f"{response_status}"}
+                response_status = "ERROR"
+                response_data['error'] = f"Unknown action: {type}"
+                print(f"{Fore.LIGHTRED_EX}[SERVER WEBSOCKET] Unknown action: {type} {Style.RESET_ALL}")
+
+            response_data['type'] = "response"
+            response_data['request_id'] = request_id
+            response_data['status'] = response_status
             response_json = json.dumps(response_data)
             await websocket.send(response_json)
 
             # Wyświetlenie dodatkowych informacji na serwerze
             print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - RS] {response_status} {Style.RESET_ALL}")     
             print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CCID] {client_id} {Style.RESET_ALL}")      
-            print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CEPID] {enemy_player_id} {Style.RESET_ALL}")     
+            # print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CEPID] {enemy_player_id} {Style.RESET_ALL}")     
 
             # Przekaż wiadomość od gracza do jego przeciwnika
             # await send_to_other_client(clients[client_id], coordinates, clients[enemy_player_id], enemy_player_id)
-            await send_to_client(enemy_player_id, coordinates, client_id)
+            # await send_to_client(enemy_player_id, coordinates, client_id)
 
     except websockets.exceptions.ConnectionClosed as ex:
         pass
@@ -104,15 +135,14 @@ async def ws_handler(websocket, path):
         print(f"{Fore.LIGHTRED_EX}[WEBSOCKET SERVER] client({client_id}) disconnected !! {Style.RESET_ALL}\n")            # client disconnected
 
 # Prześlij wiadomośc do konkretnego klienta
-async def send_to_client(enemy_player_id, coordinates, sender):
+async def send_to_client(player_id, data: dict):
     # Sprawdź, czy klient istnieje w liście
-    if enemy_player_id in clients:
+    if player_id in clients:
         # Pobierz obiekt WebSocket dla danego klienta
-        client_socket = clients[enemy_player_id]
+        client_socket = clients[player_id]
 
         # Serializuj dane do formatu JSON
-        response_data = {"type": "ENEMY_SHOT", "coordinates": f"{coordinates}", "my_id": sender, "enemy_player_id": f"{enemy_player_id}"}
-        response_json = json.dumps(response_data)
+        response_json = json.dumps(data)
 
         # Wyślij odpowiedź do klienta
         await client_socket.send(response_json)

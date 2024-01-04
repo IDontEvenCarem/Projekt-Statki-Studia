@@ -2,14 +2,14 @@
 import { CommunicationApi } from './comms';
 import GamePlayboard from './components/GamePlayboard.vue';
 import MainMenu from './components/MainMenu.vue';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const whichFieldActive = ref<'player' | 'enemy'>('player');
 
 const gameIdentifier = ref<string | null>(null);
 
 const comms = ref<CommunicationApi | null>(null);
-
+const waiting = ref(false);
 
 onMounted(() => { 
   comms.value = new CommunicationApi("ws://localhost:5001"); 
@@ -21,28 +21,38 @@ onMounted(() => {
   return () => { comms.value?.close(); }
 });
 
-watch(gameIdentifier, (newValue) => {
-  if (newValue) {
-    comms.value?.send({
-      type: 'join-game',
-      game_id: newValue,
-    })
+async function joinGame (gameCode: string) {
+  waiting.value = true;
+  await comms.value?.joinGame(gameCode);
+  waiting.value = false;
+}
+
+async function createGame () {
+  waiting.value = true;
+  const response = await comms.value?.createNewGame();
+  if (response && response.game_id) {
+    gameIdentifier.value = response.game_id;
   }
-});
-
-
-
+  waiting.value = false;
+}
 
 </script>
 
 <template>
   <div class="main-layout">
+    <div class="loading-overlay" :class="{ active: waiting }">
+      <div class="loading-inner-box">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Oczekiwanie na odpowiedź serwera...</div>
+      </div>
+    </div>
     <MainMenu 
       v-if="!gameIdentifier" 
-      @joinExistingGame="gameIdentifier = $event"
-      @createNewGame="gameIdentifier = $event"
+      @joinExistingGame="joinGame($event)"
+      @createNewGame="createGame()"
     />
     <div class="content" v-else @click="whichFieldActive = whichFieldActive === 'player' ? 'enemy' : 'player'">
+      <div class="game-identifier">Kod gry: {{ gameIdentifier }}</div>
       <GamePlayboard id="enemy-field" :class="{ active: whichFieldActive === 'enemy', 'field': true }"
         title="Plansza wroga" />
       <GamePlayboard id="player-field" :class="{ active: whichFieldActive === 'player', 'field': true }"
@@ -59,6 +69,64 @@ watch(gameIdentifier, (newValue) => {
   box-sizing: border-box;
   min-height: 100vh;
   gap: 1em;
+}
+
+.loading-overlay {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  place-content: center;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 100;
+  transition: opacity 0.4s ease;
+}
+
+.loading-overlay .loading-inner-box {
+  display: grid;
+  place-items: center;
+  place-content: center;
+  gap: 1em;
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  padding: 1em;
+  width: fit-content;
+  height: fit-content;
+  box-sizing: border-box;
+}
+
+.loading-overlay .loading-spinner {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid var(--main-color);
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-overlay .loading-text {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--main-color);
+}
+
+.loading-overlay:not(.active) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .content {

@@ -1,7 +1,12 @@
+type Message = {
+    type: string;
+    request_id: string;
+    [key: string]: any;    
+}
+
 export class CommunicationApi extends EventTarget {
     #ws: WebSocket;
-    #awaiters = new Map<string, (data: any) => void>();
-    #own_id: string | null = null;
+    #awaiters = new Map<string, ((data: any) => void)[]>();
 
     constructor(url: string) {
         super();
@@ -9,60 +14,55 @@ export class CommunicationApi extends EventTarget {
         this.#ws.addEventListener('message', (event) => {
             const data = JSON.parse(event.data);
             
-            if (data.type === 'INITIAL_ID') {
-                this.#own_id = data.id;
+            if (data.type === 'response') {
+                const awaiter = this.#awaiters.get(data.request_id);
+                if (awaiter) {
+                    for (const awaiter_ of awaiter) awaiter_(data);
+                    this.#awaiters.delete(data.request_id);
+                }
             }
 
-            this.dispatchEvent(new CustomEvent('message', { detail: event.data }));
-            const awaiter = this.#awaiters.get(data.id);
-            if (awaiter) {
-                awaiter(data);
-                this.#awaiters.delete(data.id);
-            }
+            const event_ = new CustomEvent<Message>('message', { detail: data });
+            this.dispatchEvent(event_);
+        });
+        this.#ws.addEventListener('close', () => {
+            const event_ = new CustomEvent('close');
+            this.dispatchEvent(event_);
         });
     }
     
-    send(message: string | Object) {
-        if (typeof message !== 'string') {
-            message = JSON.stringify(message);
-        }
-        this.#ws.send(message as string);
+    send(message: Object) {
+        const request_id = Math.random().toString();
+        const prepared_message = {
+            ...message,
+            request_id,
+        };
+        this.#ws.send(JSON.stringify(prepared_message));
+        return request_id;
     }
 
     close() {
         this.#ws.close();
     }
 
-    async awaitReady() {
-        return new Promise<void>((resolve) => {
-            const inner = () => {
-                if (this.#own_id) {
-                    resolve();
-                } else {
-                    setTimeout(inner, 100);
-                }
-            }
-            inner();
-        });
+    joinGame(name: string) {
+        return this.sendAndWait({ type: 'join_game', name });
     }
 
-    async joinGame(name: string) {
-        return await this.sendAndWait({ type: 'join', name });
+    createNewGame() {
+        return this.sendAndWait({ type: 'create_game' });
     }
 
-    async createNewGame(name: string, is_public: boolean) {
-        return await this.sendAndWait({ type: 'create', name, public: is_public });
+    startGame() {
+        return this.sendAndWait({ type: 'start' });
     }
 
-    async startGame() {
-        return await this.sendAndWait({ type: 'start' });
-    }
-
-    async sendAndWait(message: any) {
+    async sendAndWait(message: Object): Promise<any> {
         return new Promise((resolve) => {
-            const id = Math.random().toString();
-            this.#awaiters.set(id, resolve);
-            this.send(JSON.stringify({ ...message, id }));
+            const request_id = this.send(message);
+            const awaiter = this.#awaiters.get(request_id) ?? [];
+            awaiter.push(resolve);
+            this.#awaiters.set(request_id, awaiter);
         });
     }
 }

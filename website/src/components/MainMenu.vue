@@ -4,7 +4,7 @@ import CreateNewGame from './CreateNewGame.vue';
 
 defineEmits<{
     joinExistingGame: [gameCode: string],
-    createNewGame: [name: string, is_public: boolean],
+    createNewGame: [],
 }>()
 
 </script>
@@ -17,7 +17,7 @@ defineEmits<{
         />
         <h2 class="main-menu__separator">lub</h2>
         <CreateNewGame
-            @createGame="(name, is_public) => $emit('createNewGame', name, is_public)"
+            @createGame="$emit('createNewGame')"
         />
     </div>
 </template>
