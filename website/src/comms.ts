@@ -26,7 +26,12 @@ export class CommunicationApi extends EventTarget {
             this.dispatchEvent(event_);
         });
         this.#ws.addEventListener('close', () => {
-            const event_ = new CustomEvent('close');
+            const event_ = new CustomEvent('error', { detail: 'Connection closed' });
+            this.dispatchEvent(event_);
+        });
+        this.#ws.addEventListener('error', e => {           
+            const msg = e instanceof Error ? e.message : e;
+            const event_ = new CustomEvent('error', { detail: msg });
             this.dispatchEvent(event_);
         });
     }

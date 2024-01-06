@@ -10,12 +10,19 @@ const gameIdentifier = ref<string | null>(null);
 
 const comms = ref<CommunicationApi | null>(null);
 const waiting = ref(false);
+const error = ref<string | null>(null);
 
 onMounted(() => { 
   comms.value = new CommunicationApi("ws://localhost:5001"); 
 
   comms.value?.addEventListener('message', (event) => {
     console.log(event);
+  });
+
+  comms.value?.addEventListener('error', (event) => {
+    const details = (event as CustomEvent).detail;
+    console.dir(details)
+    error.value = `Wystąpił błąd: ${details.toString()}`
   });
 
   return () => { comms.value?.close(); }
@@ -36,14 +43,18 @@ async function createGame () {
   waiting.value = false;
 }
 
+
 </script>
 
 <template>
   <div class="main-layout">
-    <div class="loading-overlay" :class="{ active: waiting }">
-      <div class="loading-inner-box">
+    <div class="loading-overlay" :class="{ active: waiting || error }">
+      <div class="loading-inner-box" v-if="waiting && !error">
         <div class="loading-spinner"></div>
         <div class="loading-text">Oczekiwanie na odpowiedź serwera...</div>
+      </div>
+      <div class="loading-inner-box" v-if="error">
+        <div class="loading-text">{{ error }}</div>
       </div>
     </div>
     <MainMenu 
@@ -51,12 +62,40 @@ async function createGame () {
       @joinExistingGame="joinGame($event)"
       @createNewGame="createGame()"
     />
-    <div class="content" v-else @click="whichFieldActive = whichFieldActive === 'player' ? 'enemy' : 'player'">
+    <div class="content" v-else>
       <div class="game-identifier">Kod gry: {{ gameIdentifier }}</div>
-      <GamePlayboard id="enemy-field" :class="{ active: whichFieldActive === 'enemy', 'field': true }"
-        title="Plansza wroga" />
-      <GamePlayboard id="player-field" :class="{ active: whichFieldActive === 'player', 'field': true }"
-        title="Twoja plansza" />
+      <GamePlayboard 
+        id="enemy-field" 
+        :class="{ active: whichFieldActive === 'enemy', 'field': true }"
+        title="Plansza wroga" 
+        @clickCell="() => whichFieldActive = 'player'"
+        :ships="[{
+          x: 1,
+          y: 1,
+          size: 4,
+          direction: 'horizontal',
+        }, {
+          x: 3,
+          y: 3,
+          size: 3,
+          direction: 'vertical',
+        }]"
+        :cellStatuses="[{
+          x: 1,
+          y: 1,
+          status: 'hit',
+        }, {
+          x: 2,
+          y: 1,
+          status: 'miss',
+        }]"
+      />
+      <GamePlayboard 
+        id="player-field" 
+        :class="{ active: whichFieldActive === 'player', 'field': true }"
+        title="Twoja plansza" 
+        @clickCell="() => whichFieldActive = 'enemy'"
+      />
     </div>
   </div>
 </template>
