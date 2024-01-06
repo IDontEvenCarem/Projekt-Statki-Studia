@@ -1,11 +1,14 @@
 <script setup lang="ts">
+export type ShipData = {
+    x: number;
+    y: number;
+    size: number;
+    direction: 'horizontal' | 'vertical';
+    isPreview?: boolean;
+}
+
 const props = defineProps<{
-    ships?: {
-        x: number;
-        y: number;
-        size: number;
-        direction: 'horizontal' | 'vertical';
-    }[];
+    ships?: ShipData[];
     cellStatuses?: {
         x: number;
         y: number;
@@ -15,15 +18,33 @@ const props = defineProps<{
 
 const $emit = defineEmits<{
     clickCell: [x: number, y: number];
+    hoverCell: [x: number, y: number];
+    unhoverGrid: [];
 }>()
 
 function to_letter (num: number) {
     return String.fromCharCode(64 + num);
 }
 
-function shipStyle (ship: { x: number; y: number; size: number; direction: 'horizontal' | 'vertical'; }) {
+function shipStyle (ship: ShipData) {
+    const fromX = ship.x + 1;
+    const fromY = ship.y + 1;
+    let toX = ship.x + (ship.direction === 'horizontal' ? 1 : ship.size) + 1;
+    let toY = ship.y + (ship.direction === 'vertical' ? 1 : ship.size) + 1;
+    let outOfBounds = false;
+    if (toX > 12) {
+        toX = 12;
+        outOfBounds = true;
+    }
+    if (toY > 12) {
+        toY = 12;
+        outOfBounds = true;
+    }
+
     return {
-        gridArea: `${1+ship.x} / ${1+ship.y} / ${1+ship.x + (ship.direction === 'horizontal' ? 1 : ship.size)} / ${1+ship.y + (ship.direction === 'vertical' ? 1 : ship.size)}`,
+        gridArea: `${fromX} / ${fromY} / ${toX} / ${toY}`,
+        opacity: ship?.isPreview ? 0.5 : 1,
+        backgroundColor: outOfBounds ? '#f00' : undefined,
     }
 }
 
@@ -45,16 +66,25 @@ function cellClass (x: number, y: number) {
 
 <template>
     <div class="game-playboard">
-        <div class="board-wrapper">
+        <div 
+            class="board-wrapper"
+            @mouseleave="$emit('unhoverGrid')"
+        >
             <div class="row">
                 <div></div>
                 <div class="header-cell" v-for="x in 10">{{ to_letter(x) }}</div>
             </div>
-            <div v-for="y in 10" class="row">
-                <div class="header-cell">{{ y }}</div>
+            <div 
+                v-for="y in 10" 
+                class="row"
+                :key="y"
+            >
+                <div class="header-cell" :key="-1">{{ y }}</div>
                 <div v-for="x in 10" 
                     class="cell" 
                     @click="$emit('clickCell', x, y)" 
+                    @mouseover="$emit('hoverCell', x, y)"
+                    :key="x + y"
                     :class="cellClass(x, y)"
                     :style="cellStyle(x, y)"
                 >
@@ -78,6 +108,7 @@ function cellClass (x: number, y: number) {
     place-items: center;
     place-content: center;
     width: 100%;
+    aspect-ratio: 1;
 }
 .board-wrapper {
     background-color: color-mix(in srgb, var(--main-color), #000);
@@ -85,8 +116,10 @@ function cellClass (x: number, y: number) {
     padding: calc(var(--border-radius) * 2);
     display: grid;
     grid-template-columns: repeat(11, 1fr);
-    gap: 0.3em;
+    grid-template-rows: repeat(11, 1fr);
+    gap: 4px;
     width: 100%;
+    box-sizing: border-box;
 }
 .row {
     display: contents;
@@ -120,6 +153,7 @@ function cellClass (x: number, y: number) {
 
 .ship {
     padding: 5px;
+    pointer-events: none;
 }
 .ship-inner {
     background-color: color-mix(in srgb, var(--main-color) 66%, #000);

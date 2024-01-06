@@ -131,7 +131,7 @@ async def ws_handler(websocket, path):
     except websockets.exceptions.ConnectionClosed as ex:
         pass
     finally:
-        connected.remove(websocket)
+        del connected[websocket.remote_address]
         print(f"{Fore.LIGHTRED_EX}[WEBSOCKET SERVER] client({client_id}) disconnected !! {Style.RESET_ALL}\n")            # client disconnected
 
 # Prześlij wiadomośc do konkretnego klienta

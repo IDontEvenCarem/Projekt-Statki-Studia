@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { CommunicationApi } from './comms';
-import GamePlayboard from './components/GamePlayboard.vue';
+import GamePrepView from './components/GamePrepView.vue';
+import GamePlayView from './components/GamePlayView.vue';
 import MainMenu from './components/MainMenu.vue';
 import { onMounted, ref } from 'vue';
-
-const whichFieldActive = ref<'player' | 'enemy'>('player');
 
 const gameIdentifier = ref<string | null>(null);
 
@@ -43,6 +42,8 @@ async function createGame () {
   waiting.value = false;
 }
 
+const phase = ref<'preparation' | 'gameplay'>('preparation');
+const otherPlayerStatus = ref<'not-present' | 'preparing' | 'ready' | 'playing'>('not-present');
 
 </script>
 
@@ -63,39 +64,21 @@ async function createGame () {
       @createNewGame="createGame()"
     />
     <div class="content" v-else>
-      <div class="game-identifier">Kod gry: {{ gameIdentifier }}</div>
-      <GamePlayboard 
-        id="enemy-field" 
-        :class="{ active: whichFieldActive === 'enemy', 'field': true }"
-        title="Plansza wroga" 
-        @clickCell="() => whichFieldActive = 'player'"
-        :ships="[{
-          x: 1,
-          y: 1,
-          size: 4,
-          direction: 'horizontal',
-        }, {
-          x: 3,
-          y: 3,
-          size: 3,
-          direction: 'vertical',
-        }]"
-        :cellStatuses="[{
-          x: 1,
-          y: 1,
-          status: 'hit',
-        }, {
-          x: 2,
-          y: 1,
-          status: 'miss',
-        }]"
-      />
-      <GamePlayboard 
-        id="player-field" 
-        :class="{ active: whichFieldActive === 'player', 'field': true }"
-        title="Twoja plansza" 
-        @clickCell="() => whichFieldActive = 'enemy'"
-      />
+      <div class="game-header">
+        <div class="game-header__title">Statki</div>
+        <div class="game-header__game-code">Kod gry: {{ gameIdentifier }}</div>
+        <div class="game-header__phase" v-if="phase === 'preparation'">Faza: przygotowanie</div>
+        <div class="game-header__phase" v-else>Faza: rozgrywka</div>
+        <div class="game-header__other-player-status" v-if="phase === 'preparation'">
+          Status przeciwnika: 
+          <span v-if="otherPlayerStatus === 'not-present'">nieobecny</span>
+          <span v-if="otherPlayerStatus === 'preparing'">przygotowuje się</span>
+          <span v-if="otherPlayerStatus === 'ready'">gotowy</span>
+          <span v-if="otherPlayerStatus === 'playing'">gra</span>
+        </div>
+      </div>
+      <GamePrepView v-if="phase === 'preparation'" />
+      <GamePlayView v-else />
     </div>
   </div>
 </template>
@@ -188,6 +171,28 @@ async function createGame () {
 
 .field:not(.active) {
   transform: translateY(80%) scale(0.5) translateY(-40%);
+}
+
+.game-header {
+  width: 100%;
+  grid-area: 1/1/2/2;
+  background-color: var(--main-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  gap: 2em;
+  align-items: center;
+}
+
+.game-header__title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--main-color-light);
+  padding: 0;
+  margin: 0;
 }
 
 .active {
