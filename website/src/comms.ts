@@ -21,8 +21,16 @@ export class CommunicationApi extends EventTarget {
                     this.#awaiters.delete(data.request_id);
                 }
             }
+            else if (data.type === 'enemy_joined') {
+                const event_ = new CustomEvent('enemy_joined', { detail: data });
+                this.dispatchEvent(event_);
+            }
 
             const event_ = new CustomEvent<Message>('message', { detail: data });
+            this.dispatchEvent(event_);
+        });
+        this.#ws.addEventListener('open', () => {
+            const event_ = new CustomEvent('open');
             this.dispatchEvent(event_);
         });
         this.#ws.addEventListener('close', () => {
@@ -50,12 +58,20 @@ export class CommunicationApi extends EventTarget {
         this.#ws.close();
     }
 
-    joinGame(name: string) {
-        return this.sendAndWait({ type: 'join_game', name });
+    joinGame(game_id: string) {
+        return this.sendAndWait({ type: 'join_game', game_id });
     }
 
     createNewGame() {
         return this.sendAndWait({ type: 'create_game' });
+    }
+
+    placeShip(ship: string, x: number, y: number, direction: string) {
+        return this.sendAndWait({ type: 'place_ship', ship, x, y, direction });
+    }
+
+    sendReady() {
+        return this.sendAndWait({ type: 'ready' });
     }
 
     startGame() {

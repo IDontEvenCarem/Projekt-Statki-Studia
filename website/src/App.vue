@@ -3,16 +3,23 @@ import { CommunicationApi } from './comms';
 import GamePrepView from './components/GamePrepView.vue';
 import GamePlayView from './components/GamePlayView.vue';
 import MainMenu from './components/MainMenu.vue';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useStore } from './store';
+
+const store = useStore();
 
 const gameIdentifier = ref<string | null>(null);
 
 const comms = ref<CommunicationApi | null>(null);
-const waiting = ref(false);
+const waiting = ref(true);
 const error = ref<string | null>(null);
 
 onMounted(() => { 
   comms.value = new CommunicationApi("ws://localhost:5001"); 
+
+  comms.value?.addEventListener('open', () => {
+    waiting.value = false;
+  });
 
   comms.value?.addEventListener('message', (event) => {
     console.log(event);
@@ -24,12 +31,20 @@ onMounted(() => {
     error.value = `Wystąpił błąd: ${details.toString()}`
   });
 
+  comms.value.addEventListener('enemy_joined', (_event) => {
+    store.setOtherPlayerStatus("present");
+  });
+
   return () => { comms.value?.close(); }
 });
 
 async function joinGame (gameCode: string) {
   waiting.value = true;
-  await comms.value?.joinGame(gameCode);
+  const response = await comms.value?.joinGame(gameCode);
+  if (response.status === 'OK') {
+    gameIdentifier.value = gameCode;
+    store.setGameId(gameCode);
+  }
   waiting.value = false;
 }
 
@@ -43,8 +58,18 @@ async function createGame () {
 }
 
 const phase = ref<'preparation' | 'gameplay'>('preparation');
-const otherPlayerStatus = ref<'not-present' | 'preparing' | 'ready' | 'playing'>('not-present');
-
+const otherPlayerStatusText = computed(() => {
+  switch (store.other_player_status) {
+    case 'present':
+      return 'Obecny';
+    case 'not-present':
+      return 'Nieobecny';
+    case 'ready':
+      return 'Gotowy';
+    case 'playing':
+      return 'Gra';
+  }
+});
 </script>
 
 <template>
@@ -70,11 +95,7 @@ const otherPlayerStatus = ref<'not-present' | 'preparing' | 'ready' | 'playing'>
         <div class="game-header__phase" v-if="phase === 'preparation'">Faza: przygotowanie</div>
         <div class="game-header__phase" v-else>Faza: rozgrywka</div>
         <div class="game-header__other-player-status" v-if="phase === 'preparation'">
-          Status przeciwnika: 
-          <span v-if="otherPlayerStatus === 'not-present'">nieobecny</span>
-          <span v-if="otherPlayerStatus === 'preparing'">przygotowuje się</span>
-          <span v-if="otherPlayerStatus === 'ready'">gotowy</span>
-          <span v-if="otherPlayerStatus === 'playing'">gra</span>
+          Status przeciwnika: {{ otherPlayerStatusText }}
         </div>
       </div>
       <GamePrepView v-if="phase === 'preparation'" />

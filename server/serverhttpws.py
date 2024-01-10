@@ -46,7 +46,6 @@ class GameManager:
 
     def join_game(self, player_id, game_id):
         game = self.game_map[game_id]
-        game.add_player(player_id)
         self.player_game_map[player_id] = game_id
         other_player_id = self.game_player_map[game_id][0]
         self.game_player_map[game_id].append(player_id)
@@ -57,7 +56,15 @@ class GameManager:
             game_id = "".join(random.sample(string.ascii_letters + string.digits, 6))
             if game_id not in self.game_map:
                 return game_id
-    
+            
+    def which_player(self, player_id):
+        game_id = self.player_game_map[player_id]
+        players = self.game_player_map[game_id]
+        if players[0] == player_id:
+            return 'left'
+        else:
+            return 'right'
+
 game_manager = GameManager(send_to_client_hook=inform_client)
 
 # ==============================================================
@@ -99,6 +106,8 @@ async def ws_handler(websocket, path):
 
             response_data = {}
             response_status = "ERROR"
+            after_sending = []
+
 
             if type == "create_game":
                 game_id = game_manager.create_game(player_id=client_id)
@@ -107,7 +116,12 @@ async def ws_handler(websocket, path):
             elif type == "join_game":
                 other_player_id = game_manager.join_game(player_id=client_id, game_id=data['game_id'])
                 response_status = "OK"
-                await send_to_client(other_player_id, {"type": "enemy_joined", "enemy_player_id": client_id})
+                await send_to_client(other_player_id, {"type": "enemy_joined"})
+            elif type == "ready":
+                game_id = game_manager.player_game_map[client_id]
+                game = game_manager.game_map[game_id]
+                game.mark_ready(game_manager.which_player(client_id))
+                response_status = "OK"
             else:
                 response_status = "ERROR"
                 response_data['error'] = f"Unknown action: {type}"
@@ -122,11 +136,6 @@ async def ws_handler(websocket, path):
             # Wyświetlenie dodatkowych informacji na serwerze
             print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - RS] {response_status} {Style.RESET_ALL}")     
             print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CCID] {client_id} {Style.RESET_ALL}")      
-            # print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CEPID] {enemy_player_id} {Style.RESET_ALL}")     
-
-            # Przekaż wiadomość od gracza do jego przeciwnika
-            # await send_to_other_client(clients[client_id], coordinates, clients[enemy_player_id], enemy_player_id)
-            # await send_to_client(enemy_player_id, coordinates, client_id)
 
     except websockets.exceptions.ConnectionClosed as ex:
         pass

@@ -70,6 +70,35 @@ const shownShips = computed(() => {
     })
 })
 
+function onCellClick (x: number, y: number) {
+    if (selectedShip.value === null) {
+        return;
+    }
+
+    const ship = shipInfos.find(ship => ship.name === selectedShip.value);
+    if (ship === undefined) {
+        return;
+    }
+
+    ship.position = {
+        x,
+        y,
+        direction: currentDirection.value,
+    }
+    selectedShip.value = null;
+}
+
+function onShipClick(ship: ShipInfo) {
+    if (ship.position === null) {
+        // Not placed yet
+        selectedShip.value = ship.name;
+    } else {
+        // Already placed
+        ship.position = null;
+        selectedShip.value = ship.name;
+    }
+}
+
 </script>
 
 <template>
@@ -78,6 +107,7 @@ const shownShips = computed(() => {
             :style="{ 'height': '100%' }"
             :ships="shownShips"
             @hover-cell="(x, y) => previewPosition = { x, y }"
+            @click-cell="onCellClick"
             @unhover-grid="() => previewPosition = null"
         />
         <div class="ships-to-place box">
@@ -90,7 +120,7 @@ const shownShips = computed(() => {
                         placed: ship.position !== null,
                         selected: selectedShip === ship.name,
                     }"
-                    @click="selectedShip = ship.name"
+                    @click="onShipClick(ship)"
                 >
                     <div class="ship-name">{{ ship.name }}</div>
                     <div class="ship-preview">
@@ -147,6 +177,7 @@ const shownShips = computed(() => {
 .ships {
     display: flex;
     flex-direction: column;
+    gap: 5px;
 }
 
 .ship {
@@ -167,7 +198,7 @@ const shownShips = computed(() => {
 }
 
 .ship.placed {
-    background-color: #0f0;
+    background-color: #3a3;
 }
 
 .ship-name {

@@ -15,12 +15,12 @@ const value = ref('');
         <input 
             type="text" 
             placeholder="Wprowadź kod gry" 
-            maxlength="8"
+            maxlength="6"
             v-model="value" 
         />
         <button 
             @click="$emit('joinGame', value)"
-            :disabled="value.length !== 8"
+            :disabled="value.length !== 6"
         >Dołącz do gry</button>
     </div>
 </template>
