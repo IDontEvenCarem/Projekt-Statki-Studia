@@ -57,6 +57,12 @@ async function createGame () {
   waiting.value = false;
 }
 
+async function sendReady () {
+  waiting.value = true;
+  const response = await comms.value?.sendReady();
+  waiting.value = false;
+}
+
 const phase = ref<'preparation' | 'gameplay'>('preparation');
 const otherPlayerStatusText = computed(() => {
   switch (store.other_player_status) {
@@ -98,7 +104,10 @@ const otherPlayerStatusText = computed(() => {
           Status przeciwnika: {{ otherPlayerStatusText }}
         </div>
       </div>
-      <GamePrepView v-if="phase === 'preparation'" />
+      <GamePrepView 
+        v-if="phase === 'preparation'" 
+        @ready="sendReady"
+        />
       <GamePlayView v-else />
     </div>
   </div>

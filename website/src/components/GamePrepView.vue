@@ -99,6 +99,10 @@ function onShipClick(ship: ShipInfo) {
     }
 }
 
+const $emit = defineEmits<{
+    ready: [],
+}>()
+
 </script>
 
 <template>
@@ -141,7 +145,7 @@ function onShipClick(ship: ShipInfo) {
             </div>
             <div class="ready">
                 <button
-                    @click="() => $emit('ready', shipInfos)"
+                    @click="() => $emit('ready')"
                     class="ready__button"
                     :disabled="shipInfos.some(ship => ship.position === null)"
                 >
