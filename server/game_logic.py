@@ -181,14 +181,16 @@ class WarshipsGame:
         return True
     
     def take_shot(self, player, coordinates):
+        print("take_shot - Game logic In")
+        print(coordinates)
         if not self.gameStarted:
             raise Exception("Game not started yet")
         
         if self.gameEnded:
             raise Exception("Game already ended")
         
-        if self.currentPlayer != player:
-            raise Exception("Not your turn")
+        # if self.currentPlayer != player:
+        #     raise Exception("Not your turn")
 
         if player == "left":
             board = self.boardRight
@@ -196,18 +198,23 @@ class WarshipsGame:
             board = self.boardLeft
         
         if not self.are_coords_valid(coordinates):
-            return False
+            raise Exception("Invalid coordinates")
         
         position = self.coords_to_position(coordinates)
         
-        field = board[position.x - 1][position.y - 1]
+        field = board[position.x][position.y]
+        print(field.hasShip, field.isHit)
+
+        self.print_board("left" if player == "right" else "right")
 
         if field.isHit:
-            return False
+            return field.hasShip
         
-        board[position.x - 1][position.y - 1] = FieldStatus(hasShip=field.hasShip, isHit=True)
-        
+        board[position.x][position.y] = FieldStatus(hasShip=field.hasShip, isHit=True)
+
+        was_ship_hit = False
         if field.hasShip:
+            was_ship_hit = True
             if player == "left":
                 self.shipsRight = {ship: (coords, direction) if coords != coordinates else (coords, direction) for ship, (coords, direction) in self.shipsRight.items()}
                 if self.all_ships_sunk("right"):
@@ -219,10 +226,10 @@ class WarshipsGame:
                     self.gameEnded = True
                     self.winner = "right"
         
-        if not board[position.x - 1][position.y - 1].hasShip:
+        if not board[position.x][position.y].hasShip:
             self.currentPlayer = "left" if self.currentPlayer == "right" else "right"
         
-        return True
+        return was_ship_hit
 
     def mark_ready(self, player):
         if self.gameStarted:

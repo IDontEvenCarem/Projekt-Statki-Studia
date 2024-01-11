@@ -50,6 +50,37 @@ class GameManager:
         other_player_id = self.game_player_map[game_id][0]
         self.game_player_map[game_id].append(player_id)
         return other_player_id
+    
+    def get_game_of_player(self, player_id):
+        game_id = self.player_game_map[player_id]
+        return self.game_map[game_id]
+
+    def shot(self, player_id, x, y):
+        print("if game_id is not None")
+        game = self.get_game_of_player(player_id)
+        did_hit = game.take_shot(
+            game_manager.which_player(player_id),
+            game_logic.WarshipsGame.position_to_coords(game_logic.Position(x-1, y-1))               
+        )
+        if did_hit:
+            print(f"Gracz {player_id} trafł w statek przeciwnika")
+            return True
+        else:
+            print(f"Gracz {player_id} nie trafł w statek przeciwnika")
+            return False
+
+        # players = self.game_player_map.get(game_id)
+        # if players is not None and len(players) == 2: # Szczał
+        #     other_player_id = players[0] if players[1] == player_id  else players[1]
+
+        #     game = self.game_map.get(game_id, [])
+        #         print(f"Gracz {player_id} trafł w statek przeciwnika")
+        #     print(f"Gracz {player_id} nie trafł w statek przeciwnika")
+        #     return other_player_id
+        # return None
+            
+                
+        
 
     def generate_game_id(self):
         while True:
@@ -69,7 +100,7 @@ class GameManager:
     # def get_ship_position(self):
         
     
-    # Sprawdzenie czy gra jest w ogóle rozpoczęta ~ Mati
+    # Sprawdzenie czy gra jest w ogóle rozpoczęta
     def try_start_game(self, player_id): 
         game_id = self.player_game_map[player_id]
         if game_id:
@@ -150,8 +181,23 @@ async def ws_handler(websocket, path):
                     )
                     response_status = "OK"
                 except Exception as e:
-                    print(e)
+                    print()
                     response_status = "ERR"
+            elif type=="shot":
+                hit = game_manager.shot(client_id, int(data['x']), int(data['y']))
+                game = game_manager.get_game_of_player(client_id)
+                players = game_manager.game_player_map[game_id]
+                other_player_id = players[0] if players[1] == client_id else players[1]
+                is_game_won = game.winner is not None 
+                await send_to_client(other_player_id, {
+                    "type": "shot", 
+                    "x": "x",
+                    "y": "y",
+                    "hit": hit,
+                    "is_game_won": is_game_won})
+                response_data['hit'] = hit
+                response_data['is_game_won'] = is_game_won
+                response_status = "OK"
             elif type == "ready":
                 game_id = game_manager.player_game_map[client_id]
                 game = game_manager.game_map[game_id]
@@ -164,6 +210,25 @@ async def ws_handler(websocket, path):
                     await send_to_client(client_id, {"type": "game_start"})
                     print(f"{Fore.LIGHTGREEN_EX}[SERVER WEBSOCKET] Rozpoczeto grę {Style.RESET_ALL}")
                     response_status = "OK"
+# -----------------------------------------------------------------------------
+                    # hit = game_manager.shot(client_id,4,4)
+                    # game_id = game_manager.player_game_map[client_id]
+                    # game = game_manager.game_map[game_id]
+                    # players = game_manager.game_player_map[game_id]
+                    # other_player_id = players[0] if players[1] == client_id else players[1]
+                    # is_game_won = game.winner is not None 
+                    # await send_to_client(other_player_id, {
+                    #     "type": "shot", 
+                    #     "x": "x",
+                    #     "y": "y",
+                    #     "hit": hit,
+                    #     "is_game_won": is_game_won})
+                    # response_data['hit'] = hit
+                    # response_data['is_game_won'] = is_game_won
+                    # response_status = "OK"
+# -----------------------------------------------------------------------------
+
+
                 else:
                     await send_to_client(client_id, {"type": "waiting_for_opponent"})
                     print(f"{Fore.RED}[SERVER WEBSOCKET] Czekam na grę {Style.RESET_ALL}")

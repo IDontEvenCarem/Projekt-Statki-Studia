@@ -74,7 +74,7 @@ Przykład:
     "request_id":"0.8711020366383935"
 }
 
-////////////////>>      OK       <</////////////////////////////////
+////////////////>>      OK       <<////////////////////////////////
 Klient wysyła informację o gotowości
 
 Klient -> Serwer {
@@ -89,7 +89,7 @@ Serwer -> Klient {
 }
 
 
-/////////////////////////////////////////////////
+////////////////>>      OK       <<////////////////////////////////
 Klient wysyła informację o strzale
 
 Klient -> Server {
@@ -101,6 +101,7 @@ Klient -> Server {
 
 Server -> Klient {
     type: "response"
+    status: "OK" | "ERR"
     hit: boolean -- czy na podanym polu trafiono
     is_game_won: boolean -- czy strzał wygrał grę
 }
@@ -111,5 +112,19 @@ Server -> Klient2 {
     y: number
     hit: boolean
     is_game_won: boolean
+}
+
+
+/////////////////////////////////////////////////
+Serwer wysyła informacje o zmianie tury
+
+Server -> Klient1 {
+    type: "turn_change"
+    is_your_turn: boolean -- czy klient który dostał wiadmość może uznać, że jest jego tura
+}
+
+Server -> Klient2 {
+    type: "turn_change"
+    is_your_turn: boolean -- przeciwne niż w tym do klienta 1
 }
 

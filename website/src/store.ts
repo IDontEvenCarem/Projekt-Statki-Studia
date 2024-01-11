@@ -120,8 +120,8 @@ export const useStore = defineStore('mainStore', {
         },
         shoot(x: number, y: number) {
             this.requestRunning = true;
-            // this.connection?.shoot(x, y).then(response => {
-            Promise.resolve({ status: "OK", hit: true }).then(response => {    
+            this.connection?.shoot(x, y).then(response => {
+            // Promise.resolve({ status: "OK", hit: true }).then(response => {    
                 if (response.status === "OK") {
                     const { hit } = response;
                     const cell = `${x};${y}`;
