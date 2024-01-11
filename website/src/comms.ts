@@ -67,7 +67,7 @@ export class CommunicationApi extends EventTarget {
     }
 
     placeShip(ship: string, x: number, y: number, direction: string) {
-        return this.sendAndWait({ type: 'place_ship', ship, x, y, direction });
+        return this.sendAndWait({ type: 'place_ship', ship, x: y, y: x, direction });
     }
 
     sendReady() {

@@ -35,6 +35,9 @@ export const useStore = defineStore('mainStore', {
                 else if (data.type === 'game_over') {
                     this.phase = "game-over";
                 }
+                else if (data.type === "waiting_for_opponent") {
+                    this.phase = 'waiting-for-other-player'
+                }
             });
         },
         setGameId(game_id: string) {
@@ -91,10 +94,7 @@ export const useStore = defineStore('mainStore', {
         },
         sendReady() {
             this.requestRunning = true;
-            this.connection?.sendReady().then(response => {
-                if (response.status === "OK") {
-                    this.phase = "waiting-for-other-player";
-                }
+            this.connection?.sendReady().then(_response => {
                 this.requestRunning = false;
             });
         }

@@ -1,4 +1,5 @@
 import collections
+from typing import Dict, Tuple
 
 ship_shapes = {
     "carrier": 5,
@@ -16,7 +17,7 @@ class WarshipsGame:
     def __init__(self):
         self.boardLeft = [[FieldStatus(hasShip=False, isHit=False) for _ in range(10)] for _ in range(10)]
         self.boardRight = [[FieldStatus(hasShip=False, isHit=False) for _ in range(10)] for _ in range(10)]
-        self.shipsLeft = {ship: None for ship in ship_shapes}
+        self.shipsLeft : Dict[str, Tuple[Position, str]] = {ship: None for ship in ship_shapes}
         self.shipsRight = {ship: None for ship in ship_shapes}
         self.leftReady = False
         self.rightReady = False
@@ -80,11 +81,11 @@ class WarshipsGame:
 
         if ships[ship][1] == "horizontal":
             for i in range(ship_shapes[ship]):
-                if not board[position.x + i][position.y].isHit:
+                if not board[position.x + i - 1][position.y - 1].isHit:
                     return False
         else:
             for i in range(ship_shapes[ship]):
-                if not board[position.x][position.y + i].isHit:
+                if not board[position.x - 1][position.y + i - 1].isHit:
                     return False
 
         return True
@@ -97,7 +98,7 @@ class WarshipsGame:
     # ====== Game actions ======
     # ==========================
 
-    def place_ship(self, player, ship, coordinates, direction):
+    def place_ship(self, player, ship, coords, direction):
         if self.gameStarted:
             raise Exception("Game already started")
 
@@ -111,32 +112,32 @@ class WarshipsGame:
         if ship not in ships:
             raise Exception("Invalid ship type")
 
-        if not self.are_coords_valid(coordinates):
-            raise Exception("Invalid coordinates")
+        if ships.get(ship) is not None:
+            self.remove_ship(player, ship)
 
-        position = self.coords_to_position(coordinates)
-
-        if direction == "horizontal":
-            if position.x + ship_shapes[ship] > 10:
-                raise Exception("Ship out of bounds")
-            for i in range(ship_shapes[ship]):
-                if board[position.x + i][position.y].hasShip:
-                    raise Exception("Ship already placed here")
-        else:
-            if position.y + ship_shapes[ship] > 10:
-                raise Exception("Ship out of bounds")
-            for i in range(ship_shapes[ship]):
-                if board[position.x][position.y + i].hasShip:
-                    raise Exception("Ship already placed here")
+        position = self.coords_to_position(coords)
 
         if direction == "horizontal":
+            if position.x + ship_shapes[ship] - 1 > 10:
+                raise Exception("Ship out of bounds")
             for i in range(ship_shapes[ship]):
-                board[position.x + i][position.y] = FieldStatus(hasShip=True, isHit=False)
+                if board[position.x + i - 1][position.y - 1].hasShip:
+                    raise Exception("Ship already placed here")
+        else:
+            if position.y + ship_shapes[ship] - 1 > 10:
+                raise Exception("Ship out of bounds")
+            for i in range(ship_shapes[ship]):
+                if board[position.x - 1][position.y + i - 1].hasShip:
+                    raise Exception("Ship already placed here")
+
+        if direction == "horizontal":
+            for i in range(ship_shapes[ship]):
+                board[position.x + i - 1][position.y - 1] = FieldStatus(hasShip=True, isHit=False)
         else:
             for i in range(ship_shapes[ship]):
-                board[position.x][position.y + i] = FieldStatus(hasShip=True, isHit=False)
+                board[position.x - 1][position.y + i - 1] = FieldStatus(hasShip=True, isHit=False)
 
-        ships[ship] = (coordinates, direction)
+        ships[ship] = (coords, direction)
         return True
 
     def remove_ship(self, player, ship):
@@ -153,16 +154,19 @@ class WarshipsGame:
         if ship not in ships:
             return False
 
+        if ships[ship] is None:
+            return False
+
         position = self.coords_to_position(ships[ship][0])
 
         if ships[ship][1] == "horizontal":
             for i in range(ship_shapes[ship]):
-                board[position.x + i][position.y] = FieldStatus(hasShip=False, isHit=False)
+                board[position.x + i - 1][position.y - 1] = FieldStatus(hasShip=False, isHit=False)
         else:
             for i in range(ship_shapes[ship]):
-                board[position.x][position.y + i] = FieldStatus(hasShip=False, isHit=False)
+                board[position.x - 1][position.y + i - 1] = FieldStatus(hasShip=False, isHit=False)
 
-        ships[ship] = (None, None)
+        ships[ship] = None
         return True
 
     def start_game(self):
@@ -196,12 +200,12 @@ class WarshipsGame:
         
         position = self.coords_to_position(coordinates)
         
-        field = board[position.x][position.y]
+        field = board[position.x - 1][position.y - 1]
 
         if field.isHit:
             return False
         
-        board[position.x][position.y] = FieldStatus(hasShip=field.hasShip, isHit=True)
+        board[position.x - 1][position.y - 1] = FieldStatus(hasShip=field.hasShip, isHit=True)
         
         if field.hasShip:
             if player == "left":
@@ -215,7 +219,7 @@ class WarshipsGame:
                     self.gameEnded = True
                     self.winner = "right"
         
-        if not board[position.x][position.y].hasShip:
+        if not board[position.x - 1][position.y - 1].hasShip:
             self.currentPlayer = "left" if self.currentPlayer == "right" else "right"
         
         return True
@@ -235,15 +239,15 @@ class WarshipsGame:
     # ====== Utility functions ======
     # ===============================
     @staticmethod
-    def coords_to_position(self, coords):
+    def coords_to_position(coords):
         return Position(ord(coords[0]) - ord('A'), int(coords[1:]) - 1)
     
     @staticmethod
-    def position_to_coords(self, position):
+    def position_to_coords(position):
         return chr(position.x + ord('A')) + str(position.y + 1)
     
     @staticmethod
-    def are_coords_valid(self, coords):
+    def are_coords_valid(coords):
         if len(coords) < 2:
             return False
         letter, number = coords[0].upper(), coords[1]

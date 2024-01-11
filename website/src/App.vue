@@ -66,6 +66,7 @@ const otherPlayerStatusText = computed(() => {
         <div class="game-header__title">Statki</div>
         <div class="game-header__game-code">Kod gry: {{ store.game_id }}</div>
         <div class="game-header__phase" v-if="store.phase === 'placing-ships'">Faza: przygotowanie</div>
+        <div class="game-header__phase" v-if="store.phase === 'waiting-for-other-player'">Faza: czekanie na przeciwnika</div>
         <div class="game-header__phase" v-else>Faza: rozgrywka</div>
         <div class="game-header__other-player-status" v-if="phase === 'preparation'">
           Status przeciwnika: {{ otherPlayerStatusText }}

@@ -133,13 +133,32 @@ async def ws_handler(websocket, path):
                 await send_to_client(other_player_id, {"type": "enemy_joined"})
             elif type == "get_ship_position":
                 game_id = game_manager.player_game_map[client_id]
-                
+            elif type == "place_ship":
+                game_id = game_manager.player_game_map[client_id]
+                game = game_manager.game_map[game_id]
+                try:
+                    game.place_ship(
+                        game_manager.which_player(client_id),
+                        data['ship'],
+                        game_logic.WarshipsGame.position_to_coords(
+                            game_logic.Position(
+                                x = int(data['x']),
+                                y = int(data['y'])
+                            )
+                        ),
+                        data['direction']
+                    )
+                    response_status = "OK"
+                except Exception as e:
+                    print(e)
+                    response_status = "ERR"
             elif type == "ready":
                 game_id = game_manager.player_game_map[client_id]
                 game = game_manager.game_map[game_id]
                 player_side = game_manager.which_player(client_id)
                 #game.mark_ready(game_manager.which_player(client_id))
                 game.mark_ready(player_side)
+
 
                 if game_manager.try_start_game(player_id=client_id):
                     await send_to_client(client_id, {"type": "game_start"})

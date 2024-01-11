@@ -45,8 +45,8 @@ Server -> Klient2 -- gracz, który stworzył grę -- {
 }
 
 
-/////////////////////////////////////////////////
-Klient wysyła informacje o planowanym rozmieszczeniu statku
+///////////////////////////////////////////////// OK
+Klient wysyła informacje o planowanym rozmieszczeniu statku 
 
 Klient -> Serwer {
     type: "place_ship"
@@ -74,7 +74,7 @@ Przykład:
     "request_id":"0.8711020366383935"
 }
 
-/////////////////////////////////////////////////
+///////////////////////////////////////////////// OK
 Klient wysyła informację o gotowości
 
 Klient -> Serwer {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import GamePlayboard from './GamePlayboard.vue';
 
 const whichFieldActive = ref<'player' | 'enemy'>('player');
 
