@@ -61,9 +61,8 @@ export const useStore = defineStore('mainStore', {
                         ship.direction = direction;
                     }
                     this.currentShip = undefined;
-                    
-                    this.requestRunning = false;
                 }
+                this.requestRunning = false;
             });
 
         },
@@ -75,8 +74,8 @@ export const useStore = defineStore('mainStore', {
             this.requestRunning = true;
             this.connection?.createNewGame().then(response => {
                 this.game_id = response.game_id;
-                this.requestRunning = false;
                 this.phase = "placing-ships";
+                this.requestRunning = false;
             });
         },
         joinGame(game_id: string) {
@@ -84,19 +83,19 @@ export const useStore = defineStore('mainStore', {
             this.connection?.joinGame(game_id).then(response => {
                 if (response.status === "OK") {
                     this.game_id = game_id;                    
-                    this.requestRunning = false;
                     this.phase = "placing-ships";
                     this.other_player_status = "present";
                 }
+                this.requestRunning = false;
             });
         },
         sendReady() {
             this.requestRunning = true;
             this.connection?.sendReady().then(response => {
                 if (response.status === "OK") {
-                    this.requestRunning = false;
                     this.phase = "waiting-for-other-player";
                 }
+                this.requestRunning = false;
             });
         }
     },
