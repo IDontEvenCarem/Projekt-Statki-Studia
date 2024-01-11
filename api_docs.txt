@@ -9,7 +9,7 @@ Serwer -> Klient {
 }
 
 
-/////////////////////////////////////////////////
+////////////////>>      OK       <</////////////////////////////////
 Klient tworzy nową grę
 
 Klient -> Serwer {
@@ -25,7 +25,7 @@ Serwer -> Klient {
 }
 
 
-/////////////////////////////////////////////////
+////////////////>>      OK       <</////////////////////////////////
 Klient dołącza do gry
 
 Klient -> Serwer {
@@ -45,7 +45,7 @@ Server -> Klient2 -- gracz, który stworzył grę -- {
 }
 
 
-///////////////////////////////////////////////// OK
+////////////////>>      OK       <</////////////////////////////////
 Klient wysyła informacje o planowanym rozmieszczeniu statku 
 
 Klient -> Serwer {
@@ -74,7 +74,7 @@ Przykład:
     "request_id":"0.8711020366383935"
 }
 
-///////////////////////////////////////////////// OK
+////////////////>>      OK       <</////////////////////////////////
 Klient wysyła informację o gotowości
 
 Klient -> Serwer {
