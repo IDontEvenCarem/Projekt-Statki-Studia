@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useStore } from '../store';
+
+const store = useStore();
 
 defineEmits<{
     joinGame: [gameCode: string]
 }>()
 
 const value = ref('');
+
+function onJoin() {
+    if (value.value.length !== 6) {
+        return;
+    }
+    store.joinGame(value.value);
+}
 
 </script>
 
@@ -19,7 +29,7 @@ const value = ref('');
             v-model="value" 
         />
         <button 
-            @click="$emit('joinGame', value)"
+            @click="onJoin"
             :disabled="value.length !== 6"
         >Dołącz do gry</button>
     </div>

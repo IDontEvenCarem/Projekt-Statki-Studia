@@ -1,10 +1,10 @@
 <script setup lang="ts">
-const $emit = defineEmits<{
-    createGame: []
-}>()
+import { useStore } from '../store';
+
+const store = useStore();
 
 function onClick () {
-    $emit('createGame');
+    store.createNewGame();
 }
 
 </script>

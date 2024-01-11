@@ -7,18 +7,14 @@ import { computed, onMounted, ref } from 'vue';
 import { useStore } from './store';
 
 const store = useStore();
-
-const gameIdentifier = ref<string | null>(null);
-
 const comms = ref<CommunicationApi | null>(null);
-const waiting = ref(true);
 const error = ref<string | null>(null);
 
 onMounted(() => { 
   comms.value = new CommunicationApi("ws://localhost:5001"); 
 
   comms.value?.addEventListener('open', () => {
-    waiting.value = false;
+    store.setConnection(comms.value!);
   });
 
   comms.value?.addEventListener('message', (event) => {
@@ -38,31 +34,6 @@ onMounted(() => {
   return () => { comms.value?.close(); }
 });
 
-async function joinGame (gameCode: string) {
-  waiting.value = true;
-  const response = await comms.value?.joinGame(gameCode);
-  if (response.status === 'OK') {
-    gameIdentifier.value = gameCode;
-    store.setGameId(gameCode);
-  }
-  waiting.value = false;
-}
-
-async function createGame () {
-  waiting.value = true;
-  const response = await comms.value?.createNewGame();
-  if (response && response.game_id) {
-    gameIdentifier.value = response.game_id;
-  }
-  waiting.value = false;
-}
-
-async function sendReady () {
-  waiting.value = true;
-  const response = await comms.value?.sendReady();
-  waiting.value = false;
-}
-
 const phase = ref<'preparation' | 'gameplay'>('preparation');
 const otherPlayerStatusText = computed(() => {
   switch (store.other_player_status) {
@@ -80,8 +51,8 @@ const otherPlayerStatusText = computed(() => {
 
 <template>
   <div class="main-layout">
-    <div class="loading-overlay" :class="{ active: waiting || error }">
-      <div class="loading-inner-box" v-if="waiting && !error">
+    <div class="loading-overlay" :class="{ active: store.showLoadingScreen }">
+      <div class="loading-inner-box" v-if="store.showLoadingScreen && !error">
         <div class="loading-spinner"></div>
         <div class="loading-text">Oczekiwanie na odpowiedź serwera...</div>
       </div>
@@ -89,25 +60,24 @@ const otherPlayerStatusText = computed(() => {
         <div class="loading-text">{{ error }}</div>
       </div>
     </div>
-    <MainMenu 
-      v-if="!gameIdentifier" 
-      @joinExistingGame="joinGame($event)"
-      @createNewGame="createGame()"
-    />
+    <MainMenu v-if="store.phase === 'main-menu'" />
     <div class="content" v-else>
       <div class="game-header">
         <div class="game-header__title">Statki</div>
-        <div class="game-header__game-code">Kod gry: {{ gameIdentifier }}</div>
-        <div class="game-header__phase" v-if="phase === 'preparation'">Faza: przygotowanie</div>
+        <div class="game-header__game-code">Kod gry: {{ store.game_id }}</div>
+        <div class="game-header__phase" v-if="store.phase === 'placing-ships'">Faza: przygotowanie</div>
         <div class="game-header__phase" v-else>Faza: rozgrywka</div>
         <div class="game-header__other-player-status" v-if="phase === 'preparation'">
           Status przeciwnika: {{ otherPlayerStatusText }}
         </div>
       </div>
-      <GamePrepView 
-        v-if="phase === 'preparation'" 
-        @ready="sendReady"
-        />
+      <GamePrepView v-if="store.phase === 'placing-ships'" />
+      <div v-if="store.phase === 'waiting-for-other-player'">
+        <div class="waiting-for-other-player box">
+          <div class="waiting-for-other-player__title">Oczekiwanie na drugiego gracza...</div>
+          <div class="waiting-for-other-player__spinner"></div>
+        </div>
+      </div>
       <GamePlayView v-else />
     </div>
   </div>
@@ -151,13 +121,30 @@ const otherPlayerStatusText = computed(() => {
   box-sizing: border-box;
 }
 
-.loading-overlay .loading-spinner {
+.loading-overlay .loading-spinner,
+.waiting-for-other-player__spinner {
   border: 16px solid #f3f3f3;
   border-radius: 50%;
   border-top: 16px solid var(--main-color);
   width: 120px;
   height: 120px;
   animation: spin 2s linear infinite;
+}
+
+.waiting-for-other-player {
+  display: grid;
+  place-items: center;
+  place-content: center;
+  gap: 1em;
+  padding: 1em;
+  width: fit-content;
+  height: fit-content;
+  box-sizing: border-box;
+}
+
+.waiting-for-other-player__title {
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 @keyframes spin {

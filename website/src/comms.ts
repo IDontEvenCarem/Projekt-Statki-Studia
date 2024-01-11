@@ -5,20 +5,20 @@ type Message = {
 }
 
 export class CommunicationApi extends EventTarget {
-    #ws: WebSocket;
-    #awaiters = new Map<string, ((data: any) => void)[]>();
+    ws: WebSocket;
+    awaiters = new Map<string, ((data: any) => void)[]>();
 
     constructor(url: string) {
         super();
-        this.#ws = new WebSocket(url);
-        this.#ws.addEventListener('message', (event) => {
+        this.ws = new WebSocket(url);
+        this.ws.addEventListener('message', (event) => {
             const data = JSON.parse(event.data);
             
             if (data.type === 'response') {
-                const awaiter = this.#awaiters.get(data.request_id);
+                const awaiter = this.awaiters.get(data.request_id);
                 if (awaiter) {
                     for (const awaiter_ of awaiter) awaiter_(data);
-                    this.#awaiters.delete(data.request_id);
+                    this.awaiters.delete(data.request_id);
                 }
             }
             else if (data.type === 'enemy_joined') {
@@ -29,15 +29,15 @@ export class CommunicationApi extends EventTarget {
             const event_ = new CustomEvent<Message>('message', { detail: data });
             this.dispatchEvent(event_);
         });
-        this.#ws.addEventListener('open', () => {
+        this.ws.addEventListener('open', () => {
             const event_ = new CustomEvent('open');
             this.dispatchEvent(event_);
         });
-        this.#ws.addEventListener('close', () => {
+        this.ws.addEventListener('close', () => {
             const event_ = new CustomEvent('error', { detail: 'Connection closed' });
             this.dispatchEvent(event_);
         });
-        this.#ws.addEventListener('error', e => {           
+        this.ws.addEventListener('error', e => {           
             const msg = e instanceof Error ? e.message : e;
             const event_ = new CustomEvent('error', { detail: msg });
             this.dispatchEvent(event_);
@@ -50,12 +50,12 @@ export class CommunicationApi extends EventTarget {
             ...message,
             request_id,
         };
-        this.#ws.send(JSON.stringify(prepared_message));
+        this.ws.send(JSON.stringify(prepared_message));
         return request_id;
     }
 
     close() {
-        this.#ws.close();
+        this.ws.close();
     }
 
     joinGame(game_id: string) {
@@ -81,9 +81,9 @@ export class CommunicationApi extends EventTarget {
     async sendAndWait(message: Object): Promise<any> {
         return new Promise((resolve) => {
             const request_id = this.send(message);
-            const awaiter = this.#awaiters.get(request_id) ?? [];
+            const awaiter = this.awaiters.get(request_id) ?? [];
             awaiter.push(resolve);
-            this.#awaiters.set(request_id, awaiter);
+            this.awaiters.set(request_id, awaiter);
         });
     }
 }

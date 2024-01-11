@@ -1,53 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import GamePlayboard from './GamePlayboard.vue';
+import { useStore } from '../store';
 
-type ShipInfo = {
-    size: number;
-    name: string;
-    position: null | {
-        x: number;
-        y: number;
-        direction: 'horizontal' | 'vertical';
-    };
-}
+const store = useStore();
 
-const shipInfos : ShipInfo[] = [
-    {
-        size: 5,
-        name: 'Lotniskowiec',
-        position: null,
-    },
-    {
-        size: 4,
-        name: 'Pancernik',
-        position: null,
-    },
-    {
-        size: 3,
-        name: 'Krążownik',
-        position: null,
-    },
-    {
-        size: 3,
-        name: 'Okręt podwodny',
-        position: null,
-    },
-    {
-        size: 2,
-        name: 'Niszczyciel',
-        position: null,
-    },  
-]
-
-const selectedShip = ref<ShipInfo['name'] | null>(null);
 const previewPosition = ref<{ x: number; y: number; } | null>(null);
 const currentDirection = ref<'horizontal' | 'vertical'>('horizontal');
 
-
 const shownShips = computed(() => {
-    return shipInfos.flatMap(ship => {
-        if (ship.name === selectedShip.value && previewPosition.value !== null) {
+    return store.ships.flatMap(ship => {
+        if (ship.name === store.currentShip && previewPosition.value !== null) {
             return [{
                 isPreview: true,
                 size: ship.size,
@@ -57,13 +20,13 @@ const shownShips = computed(() => {
             }]
         }
 
-        if (ship.position === null) {
+        if (ship.placed === false) {
             return [];
         }
         return [{
             isPreview: false,
             size: ship.size,
-            direction: ship.position?.direction ?? 'horizontal',
+            direction: ship.direction,
             x: ship.position?.x ?? 0,
             y: ship.position?.y ?? 0,
         }];
@@ -71,37 +34,30 @@ const shownShips = computed(() => {
 })
 
 function onCellClick (x: number, y: number) {
-    if (selectedShip.value === null) {
+    if (store.currentShip === undefined || previewPosition.value === null) {
         return;
     }
 
-    const ship = shipInfos.find(ship => ship.name === selectedShip.value);
-    if (ship === undefined) {
-        return;
-    }
-
-    ship.position = {
-        x,
-        y,
-        direction: currentDirection.value,
-    }
-    selectedShip.value = null;
+    store.placeShip(x, y, currentDirection.value);
 }
 
-function onShipClick(ship: ShipInfo) {
-    if (ship.position === null) {
-        // Not placed yet
-        selectedShip.value = ship.name;
-    } else {
-        // Already placed
-        ship.position = null;
-        selectedShip.value = ship.name;
-    }
+function onShipClick(ship: typeof store.ships[0]) {
+    store.startPlacingShip(ship.name);
 }
 
-const $emit = defineEmits<{
-    ready: [],
-}>()
+function onReady() {
+    store.sendReady();
+}
+
+function getShipName (ship: typeof store.ships[0]) {
+    switch(ship.name) {
+        case 'carrier': return 'Lotniskowiec';
+        case 'battleship': return 'Pancernik';
+        case 'cruiser': return 'Krążownik';
+        case 'submarine': return 'Okręt podwodny';
+        case 'destroyer': return 'Niszczyciel';
+    }
+}
 
 </script>
 
@@ -119,14 +75,14 @@ const $emit = defineEmits<{
             <div class="ships">
                 <div 
                     class="ship" 
-                    v-for="ship in shipInfos" 
+                    v-for="ship in store.ships" 
                     :class="{ 
-                        placed: ship.position !== null,
-                        selected: selectedShip === ship.name,
+                        placed: ship.placed,
+                        selected: store.currentShip === ship.name,
                     }"
                     @click="onShipClick(ship)"
                 >
-                    <div class="ship-name">{{ ship.name }}</div>
+                    <div class="ship-name">{{ getShipName(ship) }}</div>
                     <div class="ship-preview">
                         <div class="ship-preview__cell" v-for="_ in ship.size"></div>
                     </div>
@@ -145,9 +101,12 @@ const $emit = defineEmits<{
             </div>
             <div class="ready">
                 <button
-                    @click="() => $emit('ready')"
+                    @click="onReady"
                     class="ready__button"
-                    :disabled="shipInfos.some(ship => ship.position === null)"
+                    :disabled="
+                        store.ships.some(ship => ship.placed === false)
+                        || store.own_status === 'ready'    
+                    "
                 >
                     Gotowy
                 </button>
