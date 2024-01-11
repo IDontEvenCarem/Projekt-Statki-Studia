@@ -64,6 +64,10 @@ class GameManager:
             return 'left'
         else:
             return 'right'
+        
+    # Odbieranie informacji o rozmieszczonych statkach
+    # def get_ship_position(self):
+        
     
     # Sprawdzenie czy gra jest w ogóle rozpoczęta ~ Mati
     def try_start_game(self, player_id): 
@@ -127,6 +131,9 @@ async def ws_handler(websocket, path):
                 other_player_id = game_manager.join_game(player_id=client_id, game_id=data['game_id'])
                 response_status = "OK"
                 await send_to_client(other_player_id, {"type": "enemy_joined"})
+            elif type == "get_ship_position":
+                game_id = game_manager.player_game_map[client_id]
+                
             elif type == "ready":
                 game_id = game_manager.player_game_map[client_id]
                 game = game_manager.game_map[game_id]
@@ -137,17 +144,12 @@ async def ws_handler(websocket, path):
                 if game_manager.try_start_game(player_id=client_id):
                     await send_to_client(client_id, {"type": "game_start"})
                     print(f"{Fore.LIGHTGREEN_EX}[SERVER WEBSOCKET] Rozpoczeto grę {Style.RESET_ALL}")
+                    response_status = "OK"
                 else:
                     await send_to_client(client_id, {"type": "waiting_for_opponent"})
                     print(f"{Fore.RED}[SERVER WEBSOCKET] Czekam na grę {Style.RESET_ALL}")
-                response_status = "OK"
-            elif type == "place_ship":
-                game_id = game_manager.player_game_map[client_id]
-                game = game_manager.game_map[game_id]
-                player_side = game_manager.which_player(client_id)
-                game_logic.WarshipsGame.position_to_coords()
-                game.place_ship(player_side, data['ship'], )
-                response_status = "OK"
+
+                    response_status = "OK"
             else:
                 response_status = "ERROR"
                 response_data['error'] = f"Unknown action: {type}"
@@ -160,8 +162,8 @@ async def ws_handler(websocket, path):
             await websocket.send(response_json)
 
             # Wyświetlenie dodatkowych informacji na serwerze
-            print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - RS] {response_status} {Style.RESET_ALL}")     
-            print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CCID] {client_id} {Style.RESET_ALL}")      
+            # print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - RS] {response_status} {Style.RESET_ALL}")     
+            # print(f"{Fore.MAGENTA}[SERVER WEBSOCKET - CCID] {client_id} {Style.RESET_ALL}")      
 
     except websockets.exceptions.ConnectionClosed as ex:
         pass
