@@ -35,8 +35,7 @@ export const useStore = defineStore('mainStore', {
                 else if (data.type === 'game_over') {
                     this.phase = "game-over";
                 }
-            }
-
+            });
         },
         setGameId(game_id: string) {
             this.game_id = game_id;
