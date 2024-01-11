@@ -3,6 +3,17 @@ import { CommunicationApi } from "./comms";
 
 type ShipName = "carrier" | "battleship" | "cruiser" | "submarine" | "destroyer";
 
+type Number = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+function makeEmptyCellsStatus() : Record<`${Number};${Number}`, "empty" | "hit" | "miss">  {
+    const obj : any = {};
+    for (let x = 1; x <= 10; x++) {
+        for (let y = 1; y <= 10; y++) {
+            obj[`${x};${y}`] = "empty";
+        }
+    }
+    return obj;    
+}
+
 export const useStore = defineStore('mainStore', {
     state: () => ({
         connection: undefined as undefined | CommunicationApi,
@@ -19,6 +30,8 @@ export const useStore = defineStore('mainStore', {
         ],
         currentShip: undefined as undefined | "carrier" | "battleship" | "cruiser" | "submarine" | "destroyer",
         requestRunning: false,
+        ownCellStatus: makeEmptyCellsStatus(),
+        enemyCellStatus: makeEmptyCellsStatus(),
     }),
 
     actions: {
@@ -37,6 +50,13 @@ export const useStore = defineStore('mainStore', {
                 }
                 else if (data.type === "waiting_for_opponent") {
                     this.phase = 'waiting-for-other-player'
+                }
+                else if (data.type === "shot") {
+                    const { x, y, hit } = data;
+                    const cell = `${x};${y}`;
+                    if (cell in this.ownCellStatus) {
+                        (this.ownCellStatus as any)[cell] = hit ? "hit" : "miss";
+                    }
                 }
             });
         },
@@ -95,6 +115,20 @@ export const useStore = defineStore('mainStore', {
         sendReady() {
             this.requestRunning = true;
             this.connection?.sendReady().then(_response => {
+                this.requestRunning = false;
+            });
+        },
+        shoot(x: number, y: number) {
+            this.requestRunning = true;
+            // this.connection?.shoot(x, y).then(response => {
+            Promise.resolve({ status: "OK", hit: true }).then(response => {    
+                if (response.status === "OK") {
+                    const { hit } = response;
+                    const cell = `${x};${y}`;
+                    if (cell in this.enemyCellStatus) {
+                        (this.enemyCellStatus as any)[cell] = hit ? "hit" : "miss";
+                    }
+                }
                 this.requestRunning = false;
             });
         }

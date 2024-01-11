@@ -78,6 +78,10 @@ export class CommunicationApi extends EventTarget {
         return this.sendAndWait({ type: 'start' });
     }
 
+    shoot(x: number, y: number) {
+        return this.sendAndWait({ type: 'shot', x: y, y: x });
+    }
+
     async sendAndWait(message: Object): Promise<any> {
         return new Promise((resolve) => {
             const request_id = this.send(message);
