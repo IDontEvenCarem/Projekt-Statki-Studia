@@ -24,6 +24,18 @@ export const useStore = defineStore('mainStore', {
     actions: {
         setConnection(connection: CommunicationApi) {
             this.connection = connection;
+            this.connection.addEventListener('message', e => {
+                const data = (e as CustomEvent).detail as any;
+                if (data.type === 'enemy_joined') {
+                    this.other_player_status = "present";
+                }
+                else if (data.type === 'game_start') {
+                    this.phase = "playing";
+                }
+                else if (data.type === 'game_over') {
+                    this.phase = "game-over";
+                }
+            });
         },
         setGameId(game_id: string) {
             this.game_id = game_id;
