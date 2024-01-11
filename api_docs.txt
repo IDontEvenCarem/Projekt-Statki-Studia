@@ -14,12 +14,14 @@ Klient tworzy nową grę
 
 Klient -> Serwer {
     type: "create_game"
+    request_id: string -- losowy string z klienta, powinien być taki sam w odpowiedzi
 }
 
 Serwer -> Klient {
     type: "response"
     status: "OK" | "ERR"
     game_id: string -- id gry
+    request_id: string
 }
 
 
@@ -29,14 +31,53 @@ Klient dołącza do gry
 Klient -> Serwer {
     type: "join_game"
     game_id: string -- id gry, taki jak jakiś inny gracz dostał od serwera
+    request_id: string
 }
 
 Server -> Klient {
     type: "response"
     status: "OK" | "ERR"
+    request_id: string
 }
 
 Server -> Klient2 -- gracz, który stworzył grę -- {
     type: "enemy_joined"
 }
 
+
+/////////////////////////////////////////////////
+Klient wysyła informacje o planowanym rozmieszczeniu statku
+
+Klient -> Serwer {
+    type: "place_ship"
+    name: "carrier" | "battleship" | "cruiser" | "submarine" | "destroyer"
+    x: number -- pozycja górnego lewego rogu statku
+    y: number -- pozycja górnego lewego rogu statku
+    direction: "horizontal" | "vertical"
+    request_id: string
+}
+
+Serwer -> Klient {
+    type: "response"
+    status: "OK" | "ERR"
+    request_id: string
+}
+
+
+/////////////////////////////////////////////////
+Klient wysyła informację o gotowości
+
+Klient -> Serwer {
+    type: "ready"
+    request_id: string
+}
+
+Serwer -> Klient {
+    type: "response"
+    status: "OK" | "ERR"
+    request_id: string
+}
+
+
+/////////////////////////////////////////////////
+Klient wysyła informację o strzale
