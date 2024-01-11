@@ -64,6 +64,16 @@ Serwer -> Klient {
 }
 
 
+Przykład:
+{
+    "type":"place_ship",
+    "ship":"carrier",
+    "x":2,
+    "y":2,
+    "direction":"horizontal",
+    "request_id":"0.8711020366383935"
+}
+
 /////////////////////////////////////////////////
 Klient wysyła informację o gotowości
 

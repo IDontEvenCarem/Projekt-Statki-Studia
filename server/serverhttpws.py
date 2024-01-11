@@ -141,6 +141,13 @@ async def ws_handler(websocket, path):
                     await send_to_client(client_id, {"type": "waiting_for_opponent"})
                     print(f"{Fore.RED}[SERVER WEBSOCKET] Czekam na grę {Style.RESET_ALL}")
                 response_status = "OK"
+            elif type == "place_ship":
+                game_id = game_manager.player_game_map[client_id]
+                game = game_manager.game_map[game_id]
+                player_side = game_manager.which_player(client_id)
+                game_logic.WarshipsGame.position_to_coords()
+                game.place_ship(player_side, data['ship'], )
+                response_status = "OK"
             else:
                 response_status = "ERROR"
                 response_data['error'] = f"Unknown action: {type}"

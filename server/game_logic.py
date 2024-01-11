@@ -33,7 +33,7 @@ class WarshipsGame:
     def is_player_ready(self, player):
         ships = self.shipsLeft if player == "left" else self.shipsRight
         readyness = self.leftReady if player == "left" else self.rightReady
-        print(ships)
+        # print(ships)
         all_ships_placed = all([pos is not None for ship, pos in ships.items()])
         return all_ships_placed and readyness
 
@@ -234,12 +234,15 @@ class WarshipsGame:
     # ===============================
     # ====== Utility functions ======
     # ===============================
+    @staticmethod
     def coords_to_position(self, coords):
         return Position(ord(coords[0]) - ord('A'), int(coords[1:]) - 1)
     
+    @staticmethod
     def position_to_coords(self, position):
         return chr(position.x + ord('A')) + str(position.y + 1)
     
+    @staticmethod
     def are_coords_valid(self, coords):
         if len(coords) < 2:
             return False
