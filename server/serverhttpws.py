@@ -64,6 +64,16 @@ class GameManager:
             return 'left'
         else:
             return 'right'
+    
+    # Sprawdzenie czy gra jest w ogóle rozpoczęta ~ Mati
+    def try_start_game(self, player_id): 
+        game_id = self.player_game_map[player_id]
+        if game_id:
+            game = self.game_map.get(game_id)
+            if game and game.can_start_game():
+                game.start_game()
+                return True
+        return False
 
 game_manager = GameManager(send_to_client_hook=inform_client)
 
@@ -120,7 +130,16 @@ async def ws_handler(websocket, path):
             elif type == "ready":
                 game_id = game_manager.player_game_map[client_id]
                 game = game_manager.game_map[game_id]
-                game.mark_ready(game_manager.which_player(client_id))
+                player_side = game_manager.which_player(client_id)
+                #game.mark_ready(game_manager.which_player(client_id))
+                game.mark_ready(player_side)
+
+                if game_manager.try_start_game(player_id=client_id):
+                    await send_to_client(client_id, {"type": "game_start"})
+                    print(f"{Fore.LIGHTGREEN_EX}[SERVER WEBSOCKET] Rozpoczeto grę {Style.RESET_ALL}")
+                else:
+                    await send_to_client(client_id, {"type": "waiting_for_opponent"})
+                    print(f"{Fore.RED}[SERVER WEBSOCKET] Czekam na grę {Style.RESET_ALL}")
                 response_status = "OK"
             else:
                 response_status = "ERROR"
