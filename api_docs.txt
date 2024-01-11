@@ -1,0 +1,42 @@
+Wiadomości przesyłane między serwerem a klientem:
+
+/////////////////////////////////////////////////
+Po połączeniu do serwera:
+
+Serwer -> Klient {
+    type: "INITIAL_ID"
+    my_id: string -- id klienta, nieużywane
+}
+
+
+/////////////////////////////////////////////////
+Klient tworzy nową grę
+
+Klient -> Serwer {
+    type: "create_game"
+}
+
+Serwer -> Klient {
+    type: "response"
+    status: "OK" | "ERR"
+    game_id: string -- id gry
+}
+
+
+/////////////////////////////////////////////////
+Klient dołącza do gry
+
+Klient -> Serwer {
+    type: "join_game"
+    game_id: string -- id gry, taki jak jakiś inny gracz dostał od serwera
+}
+
+Server -> Klient {
+    type: "response"
+    status: "OK" | "ERR"
+}
+
+Server -> Klient2 -- gracz, który stworzył grę -- {
+    type: "enemy_joined"
+}
+
