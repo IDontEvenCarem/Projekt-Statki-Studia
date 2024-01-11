@@ -51,13 +51,21 @@ export const useStore = defineStore('mainStore', {
             }
         },
         placeShip(x: number, y: number, direction: "horizontal" | "vertical") {
-            const ship = this.ships.find(s => s.name === this.currentShip);
-            if (ship) {
-                ship.placed = true;
-                ship.position = { x, y };
-                ship.direction = direction;
-            }
-            this.currentShip = undefined;
+            this.requestRunning = true;
+            this.connection?.placeShip(this.currentShip!, x, y, direction).then(response => {
+                if (response.status === "OK") {
+                    const ship = this.ships.find(s => s.name === this.currentShip);
+                    if (ship) {
+                        ship.placed = true;
+                        ship.position = { x, y };
+                        ship.direction = direction;
+                    }
+                    this.currentShip = undefined;
+                    
+                    this.requestRunning = false;
+                }
+            });
+
         },
         setOwnStatus(status: "present" | "ready" | "playing") {
             this.own_status = status;
