@@ -79,7 +79,7 @@ const otherPlayerStatusText = computed(() => {
           <div class="waiting-for-other-player__spinner"></div>
         </div>
       </div>
-      <GamePlayView v-else />
+      <GamePlayView v-if="store.phase === 'playing'" />
     </div>
   </div>
 </template>

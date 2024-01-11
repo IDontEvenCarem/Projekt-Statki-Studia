@@ -91,3 +91,25 @@ Serwer -> Klient {
 
 /////////////////////////////////////////////////
 Klient wysyła informację o strzale
+
+Klient -> Server {
+    type: "shot"
+    x: number
+    y: number
+    request_id: string
+}
+
+Server -> Klient {
+    type: "response"
+    hit: boolean -- czy na podanym polu trafiono
+    is_game_won: boolean -- czy strzał wygrał grę
+}
+
+Server -> Klient2 {
+    type: "shot"
+    x: number
+    y: number
+    hit: boolean
+    is_game_won: boolean
+}
+
