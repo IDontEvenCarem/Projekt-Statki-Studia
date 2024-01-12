@@ -60,6 +60,11 @@ const otherPlayerStatusText = computed(() => {
         <div class="loading-text">{{ error }}</div>
       </div>
     </div>
+    <div class="toasts">
+      <div class="toast" v-for="toast in store.toasts" :key="toast.text" :class="{ error: toast.type === 'error' }">
+        {{ toast.text }}
+      </div>
+    </div>
     <MainMenu v-if="store.phase === 'main-menu'" />
     <div class="content" v-else>
       <div class="game-header">
@@ -215,6 +220,37 @@ const otherPlayerStatusText = computed(() => {
 
 .active {
   z-index: 1;
+}
+
+.toasts {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 2em;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 1em;
+  box-sizing: border-box;
+  background-color: var(--main-color);
+  color: var(--main-color-light);
+  border-radius: var(--border-radius);
+  font-size: 1.2em;
+  font-weight: bold;
+  min-width: 100px;
+  min-height: 20px;
+  filter: drop-shadow(0px 0px 5px rgba(0, 0, 0, 0.5));
+  pointer-events: all;
+}
+
+.toast.error {
+  background-color: rgb(141, 31, 31);
 }
 
 @media (min-width: 768px) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import GamePlayboard from './GamePlayboard.vue';
 import { useStore } from '../store';
 
@@ -42,10 +42,7 @@ const enemyFieldStatuses = computed(() => {
     })
 });
 
-const whichFieldActive = ref<'player' | 'enemy'>('player');
-
 function tryToShoot(x: number, y: number) {
-  whichFieldActive.value = whichFieldActive.value === 'player' ? 'enemy' : 'player';
   store.shoot(x, y);
 }
 
@@ -55,7 +52,7 @@ function tryToShoot(x: number, y: number) {
     <div class="wrapper">
       <div 
         class="box playboard-wrapper"
-        :class="{ active: whichFieldActive === 'enemy'}"        
+        :class="{ active: !store.my_turn}"        
       >
         <div class="playboard-title">
           Plansza przeciwnika
@@ -69,7 +66,7 @@ function tryToShoot(x: number, y: number) {
 
       <div 
         class="box playboard-wrapper"
-        :class="{ active: whichFieldActive === 'player'}"  
+        :class="{ active: store.my_turn }"  
       >
         <div class="playboard-title">
           Twoja plansza

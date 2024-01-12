@@ -21,6 +21,7 @@ export const useStore = defineStore('mainStore', {
         phase: "main-menu" as "main-menu" | "placing-ships" | "waiting-for-other-player" | "playing" | "game-over",
         own_status: "present" as "present" | "ready" | "playing",
         other_player_status: "not-present" as "not-present" | "present" | "ready" | "playing",
+        my_turn: false,
         ships: [
             { name: "carrier" as ShipName, size: 5, placed: false, position: { x: 0, y: 0 }, direction: "horizontal" as "horizontal" | "vertical" },
             { name: "battleship" as ShipName, size: 4, placed: false, position: { x: 0, y: 0 }, direction: "horizontal" as "horizontal" | "vertical" },
@@ -32,6 +33,7 @@ export const useStore = defineStore('mainStore', {
         requestRunning: false,
         ownCellStatus: makeEmptyCellsStatus(),
         enemyCellStatus: makeEmptyCellsStatus(),
+        toasts: [] as { text: string, type: "info" | "error" }[],
     }),
 
     actions: {
@@ -58,6 +60,9 @@ export const useStore = defineStore('mainStore', {
                         (this.ownCellStatus as any)[cell] = hit ? "hit" : "miss";
                     }
                 }
+                else if (data.type === "turn_change") {
+                    this.my_turn = data.is_your_turn;
+                }
             });
         },
         setGameId(game_id: string) {
@@ -76,6 +81,7 @@ export const useStore = defineStore('mainStore', {
         placeShip(x: number, y: number, direction: "horizontal" | "vertical") {
             this.requestRunning = true;
             this.connection?.placeShip(this.currentShip!, x, y, direction).then(response => {
+                console.log(response)
                 if (response.status === "OK") {
                     const ship = this.ships.find(s => s.name === this.currentShip);
                     if (ship) {
@@ -84,6 +90,9 @@ export const useStore = defineStore('mainStore', {
                         ship.direction = direction;
                     }
                     this.currentShip = undefined;
+                }
+                else {
+                    this.showToast("Nie można położyć tu statku", "error", 3000);
                 }
                 this.requestRunning = false;
             });
@@ -109,6 +118,9 @@ export const useStore = defineStore('mainStore', {
                     this.phase = "placing-ships";
                     this.other_player_status = "present";
                 }
+                else {
+                    this.showToast("Nie udało się dołączyć do gry", "error", 3000);
+                }
                 this.requestRunning = false;
             });
         },
@@ -121,7 +133,6 @@ export const useStore = defineStore('mainStore', {
         shoot(x: number, y: number) {
             this.requestRunning = true;
             this.connection?.shoot(x, y).then(response => {
-            // Promise.resolve({ status: "OK", hit: true }).then(response => {    
                 if (response.status === "OK") {
                     const { hit } = response;
                     const cell = `${x};${y}`;
@@ -129,8 +140,18 @@ export const useStore = defineStore('mainStore', {
                         (this.enemyCellStatus as any)[cell] = hit ? "hit" : "miss";
                     }
                 }
+                else {
+                    this.showToast("Nie udało się strzelić", "error", 3000);
+                }
                 this.requestRunning = false;
             });
+        },
+        showToast(text: string, type: "info" | "error", duration: number) {
+            const toast = { text, type };
+            this.toasts.push(toast);
+            setTimeout(() => {
+                this.toasts = this.toasts.filter(t => t.text !== text && t.type !== type);
+            }, duration);
         }
     },
 
