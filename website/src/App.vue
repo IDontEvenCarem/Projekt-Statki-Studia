@@ -12,7 +12,10 @@ const comms = ref<CommunicationApi | null>(null);
 const error = ref<string | null>(null);
 
 onMounted(() => { 
-  comms.value = new CommunicationApi("ws://localhost:5001"); 
+  const url = new URL(window.location.toString());
+  url.protocol = url.protocol.replace('http', 'ws');
+  url.port = '5001';
+  comms.value = new CommunicationApi(url.toString()); 
 
   comms.value?.addEventListener('open', () => {
     store.setConnection(comms.value!);

@@ -111,7 +111,6 @@ function tryToShoot(x: number, y: number) {
 }
 
 
-
 .playboard-title {
   font-size: 1.4rem;
   font-weight: bold;
