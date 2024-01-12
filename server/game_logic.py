@@ -228,7 +228,7 @@ class WarshipsGame:
         
         if not board[position.x][position.y].hasShip:
             self.currentPlayer = "left" if self.currentPlayer == "right" else "right"
-        
+
         return was_ship_hit
 
     def mark_ready(self, player):

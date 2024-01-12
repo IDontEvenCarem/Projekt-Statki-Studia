@@ -18,7 +18,7 @@ onMounted(() => {
   });
 
   comms.value?.addEventListener('message', (event) => {
-    console.log(event);
+    console.log((event as CustomEvent).detail);
   });
 
   comms.value?.addEventListener('error', (event) => {

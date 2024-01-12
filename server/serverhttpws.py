@@ -68,18 +68,6 @@ class GameManager:
         else:
             print(f"Gracz {player_id} nie trafł w statek przeciwnika")
             return False
-
-        # players = self.game_player_map.get(game_id)
-        # if players is not None and len(players) == 2: # Szczał
-        #     other_player_id = players[0] if players[1] == player_id  else players[1]
-
-        #     game = self.game_map.get(game_id, [])
-        #         print(f"Gracz {player_id} trafł w statek przeciwnika")
-        #     print(f"Gracz {player_id} nie trafł w statek przeciwnika")
-        #     return other_player_id
-        # return None
-            
-                
         
 
     def generate_game_id(self):
@@ -95,6 +83,14 @@ class GameManager:
             return 'left'
         else:
             return 'right'
+    
+    def get_opponent_id(self, player_id):
+        game_id = self.player_game_map[player_id]
+        players = self.game_player_map[game_id]
+        if players[0] == player_id:
+            return players[1]
+        else:
+            return players[0]
         
     # Odbieranie informacji o rozmieszczonych statkach
     # def get_ship_position(self):
@@ -189,15 +185,42 @@ async def ws_handler(websocket, path):
                 players = game_manager.game_player_map[game_id]
                 other_player_id = players[0] if players[1] == client_id else players[1]
                 is_game_won = game.winner is not None 
+                
                 await send_to_client(other_player_id, {
                     "type": "shot", 
-                    "x": "x",
-                    "y": "y",
+                    "x": data['x'],
+                    "y": data['y'],
                     "hit": hit,
                     "is_game_won": is_game_won})
                 response_data['hit'] = hit
                 response_data['is_game_won'] = is_game_won
                 response_status = "OK"
+
+                if hit:
+                    print("wysyłam brak zmiany tury gracza")
+                    await send_to_client(other_player_id, {
+                        "type": "turn_change",
+                        "is_your_turn": False,
+                    })
+                    await send_to_client(client_id, {
+                        "type": "turn_change",
+                        "is_your_turn": True,
+                    })
+                else:
+                    # zmiana tury gry
+                    print("wysyłam zmiane tury gracza")
+                    await send_to_client(other_player_id, {
+                        "type": "turn_change",
+                        "is_your_turn": True,
+                    })
+                    
+                    await send_to_client(client_id, {
+                        "type": "turn_change",
+                        "is_your_turn": False,
+                    })
+                    
+                    game.currentPlayer = 'left' if game.currentPlayer == 'right' else 'right'
+                
             elif type == "ready":
                 game_id = game_manager.player_game_map[client_id]
                 game = game_manager.game_map[game_id]
@@ -208,31 +231,15 @@ async def ws_handler(websocket, path):
 
                 if game_manager.try_start_game(player_id=client_id):
                     await send_to_client(client_id, {"type": "game_start"})
+                    await send_to_client(game_manager.get_opponent_id(client_id), {"type": "game_start"})
+                    left_player_id = game_manager.game_player_map[game_id][0]
+                    await send_to_client(left_player_id, {"type": "turn_change", "is_your_turn": True})
+
                     print(f"{Fore.LIGHTGREEN_EX}[SERVER WEBSOCKET] Rozpoczeto grę {Style.RESET_ALL}")
                     response_status = "OK"
-# -----------------------------------------------------------------------------
-                    # hit = game_manager.shot(client_id,4,4)
-                    # game_id = game_manager.player_game_map[client_id]
-                    # game = game_manager.game_map[game_id]
-                    # players = game_manager.game_player_map[game_id]
-                    # other_player_id = players[0] if players[1] == client_id else players[1]
-                    # is_game_won = game.winner is not None 
-                    # await send_to_client(other_player_id, {
-                    #     "type": "shot", 
-                    #     "x": "x",
-                    #     "y": "y",
-                    #     "hit": hit,
-                    #     "is_game_won": is_game_won})
-                    # response_data['hit'] = hit
-                    # response_data['is_game_won'] = is_game_won
-                    # response_status = "OK"
-# -----------------------------------------------------------------------------
-
-
                 else:
                     await send_to_client(client_id, {"type": "waiting_for_opponent"})
                     print(f"{Fore.RED}[SERVER WEBSOCKET] Czekam na grę {Style.RESET_ALL}")
-
                     response_status = "OK"
             else:
                 response_status = "ERROR"

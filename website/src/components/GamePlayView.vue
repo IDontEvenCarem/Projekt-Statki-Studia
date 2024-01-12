@@ -22,7 +22,7 @@ const ownShips = computed(() => {
 
 const ownFieldStatuses = computed(() => {
     return Object.entries(store.ownCellStatus).map(([k, status]) => {
-      const [x, y] = k.split(';').map(Number);
+      const [y, x] = k.split(';').map(Number);
       return {
             x,
             y,
@@ -43,6 +43,9 @@ const enemyFieldStatuses = computed(() => {
 });
 
 function tryToShoot(x: number, y: number) {
+  if (!store.my_turn) {
+    return;
+  }
   store.shoot(x, y);
 }
 
@@ -52,7 +55,7 @@ function tryToShoot(x: number, y: number) {
     <div class="wrapper">
       <div 
         class="box playboard-wrapper"
-        :class="{ active: !store.my_turn}"        
+        :class="{ active: store.my_turn}"        
       >
         <div class="playboard-title">
           Plansza przeciwnika
@@ -66,7 +69,7 @@ function tryToShoot(x: number, y: number) {
 
       <div 
         class="box playboard-wrapper"
-        :class="{ active: store.my_turn }"  
+        :class="{ active: !store.my_turn }"  
       >
         <div class="playboard-title">
           Twoja plansza
