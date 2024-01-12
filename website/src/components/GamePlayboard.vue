@@ -138,10 +138,12 @@ function cellClass (x: number, y: number) {
 .cell--hit {
     background-color: #f00;
 }
+
 .cell--miss {
     background-color: #fff;
     color: #000;
 }
+
 .header-cell {
     border-radius: var(--border-radius);
     aspect-ratio: 1;
@@ -165,5 +167,14 @@ function cellClass (x: number, y: number) {
 .cell:hover {
     background-color: color-mix(in srgb, var(--main-color) 66%, #fff);
     color: #fff;
+}
+
+.cell--hit:hover {
+    background-color: #f33;
+}
+
+.cell--miss:hover {
+    background-color: #ccc;
+    color: #000;
 }
 </style>

@@ -7,6 +7,7 @@ import game_logic
 import random
 import string
 from typing import Dict, Any
+import os
 
 SERVER = "0.0.0.0"
 PORT_HTTP = 5000
@@ -112,11 +113,35 @@ game_manager = GameManager(send_to_client_hook=inform_client)
 
 class ServerHttp(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
+        request_path = self.path
+        print(f"{Fore.LIGHTGREEN_EX}[HTTP SERVER] request_path: {request_path} {Style.RESET_ALL}")
 
-        self.wfile.write(bytes("<html><body><h1>Hello</h1></body></html>", "utf-8"))
+        if request_path == "/":
+            if os.stat("dist/index.html").st_size == 0:
+                return
+            with open("dist/index.html", "rb") as file:
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(file.read())
+        elif request_path.endswith('.js'):
+            if os.stat("dist" + request_path).st_size == 0:
+                return
+            with open("dist" + request_path, "rb") as file:
+                self.send_response(200)
+                self.send_header("Content-type", "text/javascript")
+                self.end_headers()
+                self.wfile.write(file.read())
+        elif request_path.endswith('.css'):
+            if os.stat("dist" + request_path).st_size == 0:
+                return
+            with open("dist" + request_path, "rb") as file:
+                self.send_response(200)
+                self.send_header("Content-type", "text/css")
+                self.end_headers()
+                self.wfile.write(file.read())
+        else:
+            self.wfile.write(bytes("<html><body><h1>Hello</h1></body></html>", "utf-8"))
 
 async def ws_handler(websocket, path):
     connected[websocket.remote_address] = websocket

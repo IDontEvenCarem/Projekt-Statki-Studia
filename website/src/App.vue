@@ -5,6 +5,7 @@ import GamePlayView from './components/GamePlayView.vue';
 import MainMenu from './components/MainMenu.vue';
 import { computed, onMounted, ref } from 'vue';
 import { useStore } from './store';
+import GameOverView from './components/GameOverView.vue';
 
 const store = useStore();
 const comms = ref<CommunicationApi | null>(null);
@@ -34,7 +35,6 @@ onMounted(() => {
   return () => { comms.value?.close(); }
 });
 
-const phase = ref<'preparation' | 'gameplay'>('preparation');
 const otherPlayerStatusText = computed(() => {
   switch (store.other_player_status) {
     case 'present':
@@ -73,7 +73,7 @@ const otherPlayerStatusText = computed(() => {
         <div class="game-header__phase" v-if="store.phase === 'placing-ships'">Faza: przygotowanie</div>
         <div class="game-header__phase" v-if="store.phase === 'waiting-for-other-player'">Faza: czekanie na przeciwnika</div>
         <div class="game-header__phase" v-else>Faza: rozgrywka</div>
-        <div class="game-header__other-player-status" v-if="phase === 'preparation'">
+        <div class="game-header__other-player-status" v-if="store.phase === 'placing-ships'">
           Status przeciwnika: {{ otherPlayerStatusText }}
         </div>
       </div>
@@ -85,6 +85,7 @@ const otherPlayerStatusText = computed(() => {
         </div>
       </div>
       <GamePlayView v-if="store.phase === 'playing'" />
+      <GameOverView v-if="store.phase === 'game-over'" />
     </div>
   </div>
 </template>

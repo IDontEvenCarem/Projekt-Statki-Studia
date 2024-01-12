@@ -19,6 +19,7 @@ export const useStore = defineStore('mainStore', {
         connection: undefined as undefined | CommunicationApi,
         game_id: undefined as string | undefined,
         phase: "main-menu" as "main-menu" | "placing-ships" | "waiting-for-other-player" | "playing" | "game-over",
+        self_won: false,
         own_status: "present" as "present" | "ready" | "playing",
         other_player_status: "not-present" as "not-present" | "present" | "ready" | "playing",
         my_turn: false,
@@ -54,10 +55,14 @@ export const useStore = defineStore('mainStore', {
                     this.phase = 'waiting-for-other-player'
                 }
                 else if (data.type === "shot") {
-                    const { x, y, hit } = data;
+                    const { x, y, hit, is_game_won } = data;
                     const cell = `${x};${y}`;
                     if (cell in this.ownCellStatus) {
                         (this.ownCellStatus as any)[cell] = hit ? "hit" : "miss";
+                    }
+                    if (is_game_won) {
+                        this.phase = "game-over";
+                        this.self_won = false;
                     }
                 }
                 else if (data.type === "turn_change") {
@@ -134,10 +139,14 @@ export const useStore = defineStore('mainStore', {
             this.requestRunning = true;
             this.connection?.shoot(x, y).then(response => {
                 if (response.status === "OK") {
-                    const { hit } = response;
+                    const { hit, is_game_won } = response;
                     const cell = `${x};${y}`;
                     if (cell in this.enemyCellStatus) {
                         (this.enemyCellStatus as any)[cell] = hit ? "hit" : "miss";
+                    }
+                    if (is_game_won) {
+                        this.phase = "game-over";
+                        this.self_won = true;
                     }
                 }
                 else {
